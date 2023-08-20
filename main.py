@@ -1,16 +1,18 @@
 import os
 from pytube import YouTube
-from tqdm import tqdm
 import tkinter as tk
+from tkinter import ttk
 from tkinter import Label, Entry, Button, OptionMenu, StringVar, filedialog
 
 def on_progress(stream, chunk, bytes_remaining):
     # Calculate the percentage of completion
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
-    # Update the progress bar
-    tqdm_instance.n = percent
-    tqdm_instance.refresh()
+    # Update the progress label
+    update_progress_bar(percent)
+
+def update_progress_bar(percent):
+    progress_label.config(text=f"Progress: {percent:.2f}%")
 
 def download_video():
     link = link_entry.get()
@@ -55,17 +57,23 @@ def download_video():
 
 def select_save_directory():
     directory = filedialog.askdirectory()
-    save_directory_entry.delete(0, tk.END)
-    save_directory_entry.insert(0, directory)
+    if directory:
+        save_directory_entry.delete(0, tk.END)
+        save_directory_entry.insert(0, directory)
 
 # Create the main window
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry('640x240')
-window.configure(bg='#896848')
 
-# Create and pack GUI elements
-Label(window, text="YouTube Video URL:").pack()
+# Create and pack GUI elements with styling
+style = ttk.Style()
+style.configure("TLabel", font=("Helvetica", 12))
+style.configure("TButton", font=("Helvetica", 12))
+style.configure("TEntry", font=("Helvetica", 12))
+style.configure("TMenubutton", font=("Helvetica", 12))
+
+Label(window, text="YouTube Video URL:").pack(pady=10)
 link_entry = Entry(window, width=50)
 link_entry.pack()
 
@@ -80,10 +88,12 @@ save_directory_entry = Entry(window, width=50)
 save_directory_entry.pack()
 
 Button(window, text="Select Directory", command=select_save_directory).pack()
-Button(window, text="Download", command=download_video).pack()
+download_button = Button(window, text="Download", command=download_video)
+download_button.pack()
 
-# Create the tqdm progress bar instance
-tqdm_instance = tqdm(total=100, unit='%', ascii=True)
+# Create a Label to display progress
+progress_label = Label(window, text="Progress: 0.00%")
+progress_label.pack(pady=10)
 
 # Start the Tkinter main loop
 window.mainloop()
