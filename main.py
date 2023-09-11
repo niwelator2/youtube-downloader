@@ -1,8 +1,36 @@
 import os
+import requests
 from pytube import YouTube
 import tkinter as tk
 from tkinter import ttk
 from tkinter import Label, Entry, Button, OptionMenu, StringVar, filedialog
+from google.oauth2 import credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+# Define your Google API credentials (client_id and client_secret)
+CLIENT_ID = 'YOUR_CLIENT_ID'
+CLIENT_SECRET = 'YOUR_CLIENT_SECRET'
+SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
+
+# Path to credentials file (store your credentials here)
+CREDENTIALS_FILE = 'credentials.json'
+
+# Create or load the OAuth2 credentials
+def get_credentials():
+    if os.path.exists(CREDENTIALS_FILE):
+        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+        credentials = flow.run_local_server()
+        return credentials
+    else:
+        raise Exception("Credentials file not found. Please provide your OAuth2 credentials.")
+
+# Authenticate and get YouTube data
+def authenticate_and_get_youtube_data():
+    credentials = get_credentials()
+
+    # Perform YouTube-related tasks here using the authenticated credentials
+    # For example, list user's YouTube videos, upload videos, etc.
+    # Ensure you use YouTube Data API for these tasks.
 
 def on_progress(stream, chunk, bytes_remaining):
     # Calculate the percentage of completion
@@ -23,6 +51,7 @@ def download_video():
         os.makedirs(save_directory)
 
     try:
+        YouTube.allow_oauth_cache = True
         youtube_object = YouTube(link, on_progress_callback=on_progress)
         video_title = youtube_object.title
 
