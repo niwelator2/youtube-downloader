@@ -27,14 +27,18 @@ def download_single_video(link, download_type, save_directory):
         if download_type == "MP4":
             stream = youtube_object.streams.get_highest_resolution()
             print("Downloading video:", video_title)
-            video_file = stream.download(output_path=save_directory, filename=video_title)
+            video_file = stream.download(
+                output_path=save_directory, filename=video_title
+            )
             new_file = os.path.join(save_directory, f"{video_title}.mp4")
             os.rename(video_file, new_file)
 
         elif download_type == "MP3":
             stream = youtube_object.streams.filter(only_audio=True).first()
             print("Downloading audio (MP3):", video_title)
-            audio_file = stream.download(output_path=save_directory, filename=video_title)
+            audio_file = stream.download(
+                output_path=save_directory, filename=video_title
+            )
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
             os.rename(audio_file, new_file)
 
@@ -78,10 +82,29 @@ def select_save_directory(entry_widget):
         entry_widget.insert(0, directory)
 
 
+def download_playlist():
+    link = playlist_link_entry.get()
+    save_directory = playlist_save_directory_entry.get() or os.getcwd()
+    playlist = Playlist(link)
+    #print(f"Downloading playlist: {playlist.title()}")
+
+    for video_url in playlist.video_urls:
+        download_single_video(video_url, download_type_var.get(), save_directory)
+
+    print("Playlist download completed!")
+
+
 # Create the main window
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
+
+
+# Create a Label to display progress
+progress_var = StringVar()
+progress_label = Label(window, text="Progress: 0.00%")
+progress_label.pack(pady=10)
+
 
 # Create and pack GUI elements with styling
 style = ttk.Style()
@@ -140,18 +163,10 @@ select_playlist_directory_button = Button(
 select_playlist_directory_button.pack()
 
 download_button2 = Button(
-    right_frame,
-    text="Download Playlist",
-    command=lambda: download_playlist(
-        playlist_link_entry.get(), playlist_save_directory_entry.get()
-    ),
+    right_frame, text="Download Playlist", command=download_playlist
 )
 download_button2.pack()
 
-# Create a Label to display progress
-progress_var = StringVar()
-progress_label = Label(window, text="Progress: 0.00%")
-progress_label.pack(pady=10)
 
 # Start the Tkinter main loop
 window.mainloop()
