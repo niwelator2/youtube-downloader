@@ -1,23 +1,21 @@
 import os
 from pytube import YouTube, Playlist
 import tkinter as tk
-from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog
-
+from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog, DoubleVar
 
 def on_progress(stream, chunk, bytes_remaining):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
     update_progress_bar(percent)
 
-
 def update_progress_bar(percent):
-    progress_var.set(f"Progress: {percent:.2f}%")
-    progress_label.config(text=progress_var.get())
-
+    progress_var.set(percent)
+    progress_bar["value"] = percent
+    progress_label.config(text=f"Progress: {percent:.2f}%")
+    window.update_idletasks()
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
-
 
 def download_single_video(link, download_type, save_directory):
     try:
@@ -51,60 +49,25 @@ def download_single_video(link, download_type, save_directory):
     except Exception as e:
         print(f"An error has occurred: {str(e)}")
 
-
-def download_playlist(link=None, save_directory=None):
-    if link:
-        save_directory = save_directory or os.getcwd()
-        playlist = Playlist(link)
-        print(f"Downloading playlist: {playlist.title()}")
-
-        for video_url in playlist.video_urls:
-            download_single_video(video_url, download_type_var.get(), save_directory)
-
-        print("Playlist download completed!")
-
-    else:
-        link = playlist_link_entry.get()
-        save_directory = playlist_save_directory_entry.get()
-        download_playlist(link, save_directory)
-
-
-def download_video():
-    link = link_entry.get()
-    save_directory = save_directory_entry.get()
-    download_single_video(link, download_type_var.get(), save_directory)
-
-
-def select_save_directory(entry_widget):
-    directory = filedialog.askdirectory()
-    if directory:
-        entry_widget.delete(0, tk.END)
-        entry_widget.insert(0, directory)
-
-
 def download_playlist():
     link = playlist_link_entry.get()
     save_directory = playlist_save_directory_entry.get() or os.getcwd()
     playlist = Playlist(link)
-    #print(f"Downloading playlist: {playlist.title()}")
 
     for video_url in playlist.video_urls:
         download_single_video(video_url, download_type_var.get(), save_directory)
 
     print("Playlist download completed!")
 
-
 # Create the main window
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
 
-
 # Create a Label to display progress
-progress_var = StringVar()
+progress_var = DoubleVar()
 progress_label = Label(window, text="Progress: 0.00%")
 progress_label.pack(pady=10)
-
 
 # Create and pack GUI elements with styling
 style = ttk.Style()
@@ -139,7 +102,7 @@ select_directory_button = Button(
 select_directory_button.pack()
 
 download_button = Button(
-    left_frame, text="Download Single Video", command=download_video
+    left_frame, text="Download Single Video", command=download_single_video
 )
 download_button.pack()
 
@@ -158,7 +121,7 @@ playlist_save_directory_entry.pack()
 select_playlist_directory_button = Button(
     right_frame,
     text="Select Directory",
-    command=lambda: select_save_directory(playlist_save_directory_entry),
+    command=lambda: select_save_directory(save_directory_entry),
 )
 select_playlist_directory_button.pack()
 
@@ -167,6 +130,9 @@ download_button2 = Button(
 )
 download_button2.pack()
 
+# Progress bar
+progress_bar = ttk.Progressbar(window, length=200, mode="determinate", variable=progress_var)
+progress_bar.pack(pady=10)
 
 # Start the Tkinter main loop
 window.mainloop()
