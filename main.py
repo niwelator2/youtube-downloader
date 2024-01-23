@@ -11,7 +11,8 @@ def on_progress(stream, chunk, bytes_remaining):
 
 
 def update_progress_bar(percent):
-    progress_label.config(text=f"Progress: {percent:.2f}%")
+    progress_var.set(f"Progress: {percent:.2f}%")
+    progress_label.config(text=progress_var.get())
 
 
 def clean_video_title(title):
@@ -26,18 +27,14 @@ def download_single_video(link, download_type, save_directory):
         if download_type == "MP4":
             stream = youtube_object.streams.get_highest_resolution()
             print("Downloading video:", video_title)
-            video_file = stream.download(
-                output_path=save_directory, filename=video_title
-            )
+            video_file = stream.download(output_path=save_directory, filename=video_title)
             new_file = os.path.join(save_directory, f"{video_title}.mp4")
             os.rename(video_file, new_file)
 
         elif download_type == "MP3":
             stream = youtube_object.streams.filter(only_audio=True).first()
             print("Downloading audio (MP3):", video_title)
-            audio_file = stream.download(
-                output_path=save_directory, filename=video_title
-            )
+            audio_file = stream.download(output_path=save_directory, filename=video_title)
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
             os.rename(audio_file, new_file)
 
@@ -51,8 +48,9 @@ def download_single_video(link, download_type, save_directory):
         print(f"An error has occurred: {str(e)}")
 
 
-def download_playlist(link, save_directory):
-    try:
+def download_playlist(link=None, save_directory=None):
+    if link:
+        save_directory = save_directory or os.getcwd()
         playlist = Playlist(link)
         print(f"Downloading playlist: {playlist.title()}")
 
@@ -61,14 +59,16 @@ def download_playlist(link, save_directory):
 
         print("Playlist download completed!")
 
-    except Exception as e:
-        print(f"An error has occurred: {str(e)}")
+    else:
+        link = playlist_link_entry.get()
+        save_directory = playlist_save_directory_entry.get()
+        download_playlist(link, save_directory)
 
 
 def download_video():
     link = link_entry.get()
     save_directory = save_directory_entry.get()
-    download_playlist(link, save_directory)
+    download_single_video(link, download_type_var.get(), save_directory)
 
 
 def select_save_directory(entry_widget):
@@ -149,6 +149,7 @@ download_button2 = Button(
 download_button2.pack()
 
 # Create a Label to display progress
+progress_var = StringVar()
 progress_label = Label(window, text="Progress: 0.00%")
 progress_label.pack(pady=10)
 
