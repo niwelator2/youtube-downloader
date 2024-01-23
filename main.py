@@ -1,7 +1,7 @@
 import os
 from pytube import YouTube, Playlist
 import tkinter as tk
-from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog
+from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog, Checkbutton
 
 
 def on_progress(stream, chunk, bytes_remaining):
@@ -71,7 +71,7 @@ def download_video():
     link = link_entry.get()
     save_directory = save_directory_entry.get()
 
-    if "playlist?list=" in link:
+    if "playlist?list=" in link and download_playlist_var.get():
         download_playlist_videos(link, save_directory)
     else:
         download_single_video(
@@ -91,7 +91,7 @@ def select_save_directory():
 # Create the main window
 window = tk.Tk()
 window.title("YouTube Downloader")
-window.geometry("640x240")
+window.geometry("640x300")
 
 # Create and pack GUI elements with styling
 style = ttk.Style()
@@ -100,7 +100,7 @@ style.configure("TButton", font=("Helvetica", 12))
 style.configure("TEntry", font=("Helvetica", 12))
 style.configure("TMenubutton", font=("Helvetica", 12))
 
-Label(window, text="YouTube Video URL:").pack(pady=10)
+Label(window, text="YouTube URL:").pack(pady=10)
 link_entry = Entry(window, width=50)
 link_entry.pack()
 
@@ -113,6 +113,11 @@ download_type_menu.pack()
 Label(window, text="Save Directory:").pack()
 save_directory_entry = Entry(window, width=50)
 save_directory_entry.pack()
+
+Label(window, text="Download Playlist:").pack()
+download_playlist_var = tk.BooleanVar(window)
+download_playlist_checkbox = Checkbutton(window, text="Download Entire Playlist", variable=download_playlist_var)
+download_playlist_checkbox.pack()
 
 Button(window, text="Select Directory", command=select_save_directory).pack()
 download_button = Button(window, text="Download", command=download_video)
