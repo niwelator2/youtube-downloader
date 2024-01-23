@@ -1,7 +1,7 @@
 import os
 from pytube import YouTube, Playlist
 import tkinter as tk
-from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog, Checkbutton
+from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog
 
 
 def on_progress(stream, chunk, bytes_remaining):
@@ -68,11 +68,7 @@ def download_playlist(link, save_directory):
 def download_video():
     link = link_entry.get()
     save_directory = save_directory_entry.get()
-
-    if "playlist?list=" in link and download_playlist_var.get():
-        download_playlist(link, save_directory)
-    else:
-        download_single_video(link, download_type_var.get(), save_directory)
+    download_playlist(link, save_directory)
 
 
 def select_save_directory(entry_widget):
@@ -143,12 +139,13 @@ select_playlist_directory_button = Button(
 )
 select_playlist_directory_button.pack()
 
-Label(window, text="Save Directory:").pack()
-save_directory_entry = Entry(window, width=50)
-save_directory_entry.pack()
-
-
-download_button2 = Button(window, text="Download playlist", command=download_playlist)
+download_button2 = Button(
+    right_frame,
+    text="Download Playlist",
+    command=lambda: download_playlist(
+        playlist_link_entry.get(), playlist_save_directory_entry.get()
+    ),
+)
 download_button2.pack()
 
 # Create a Label to display progress
