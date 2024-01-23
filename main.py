@@ -1,12 +1,23 @@
 import os
 from pytube import YouTube, Playlist
 import tkinter as tk
-from tkinter import ttk, Label, Entry, Button, OptionMenu, StringVar, filedialog, DoubleVar
+from tkinter import (
+    ttk,
+    Label,
+    Entry,
+    Button,
+    OptionMenu,
+    StringVar,
+    DoubleVar,
+    filedialog,
+)
+
 
 def on_progress(stream, chunk, bytes_remaining):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
     update_progress_bar(percent)
+
 
 def update_progress_bar(percent):
     progress_var.set(percent)
@@ -14,8 +25,10 @@ def update_progress_bar(percent):
     progress_label.config(text=f"Progress: {percent:.2f}%")
     window.update_idletasks()
 
+
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
+
 
 def download_single_video(link, download_type, save_directory):
     try:
@@ -49,6 +62,7 @@ def download_single_video(link, download_type, save_directory):
     except Exception as e:
         print(f"An error has occurred: {str(e)}")
 
+
 def download_playlist():
     link = playlist_link_entry.get()
     save_directory = playlist_save_directory_entry.get() or os.getcwd()
@@ -58,6 +72,14 @@ def download_playlist():
         download_single_video(video_url, download_type_var.get(), save_directory)
 
     print("Playlist download completed!")
+
+
+def select_save_directory(entry_widget):
+    directory = filedialog.askdirectory()
+    if directory:
+        entry_widget.delete(0, tk.END)
+        entry_widget.insert(0, directory)
+
 
 # Create the main window
 window = tk.Tk()
@@ -121,7 +143,7 @@ playlist_save_directory_entry.pack()
 select_playlist_directory_button = Button(
     right_frame,
     text="Select Directory",
-    command=lambda: select_save_directory(save_directory_entry),
+    command=lambda: select_save_directory(playlist_save_directory_entry),
 )
 select_playlist_directory_button.pack()
 
@@ -131,7 +153,9 @@ download_button2 = Button(
 download_button2.pack()
 
 # Progress bar
-progress_bar = ttk.Progressbar(window, length=200, mode="determinate", variable=progress_var)
+progress_bar = ttk.Progressbar(
+    window, length=200, mode="determinate", variable=progress_var
+)
 progress_bar.pack(pady=10)
 
 # Start the Tkinter main loop
