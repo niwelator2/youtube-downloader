@@ -13,12 +13,10 @@ from tkinter import (
     filedialog,
 )
 
-
 def on_progress(stream, chunk, bytes_remaining):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
     update_progress_bar(percent)
-
 
 def update_progress_bar(percent):
     progress_var.set(percent)
@@ -26,10 +24,8 @@ def update_progress_bar(percent):
     progress_label.config(text=f"Progress: {percent:.2f}%")
     window.update_idletasks()
 
-
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
-
 
 def download_single_video(link, download_type, save_directory):
     try:
@@ -63,7 +59,6 @@ def download_single_video(link, download_type, save_directory):
     except Exception as e:
         print(f"An error has occurred: {str(e)}")
 
-
 def download_playlist():
     link = playlist_link_entry.get()
     save_directory = playlist_save_directory_entry.get() or os.getcwd()
@@ -76,23 +71,19 @@ def download_playlist():
 
     print("Playlist download completed!")
 
-
 def select_save_directory(entry_widget):
     directory = filedialog.askdirectory()
     if directory:
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
 
-
 def download_single_video_threaded(link, download_type, save_directory):
     # Your existing download_single_video function code here
     download_single_video(link, download_type, save_directory)
 
-
 def download_playlist_threaded():
     # Your existing download_playlist function code here
     download_playlist()
-
 
 def start_download_single_video_thread():
     link = link_entry.get()
@@ -108,7 +99,6 @@ def start_download_single_video_thread():
     # Start the thread
     download_thread.start()
 
-
 def start_download_playlist_thread():
     # Create a new thread for the playlist download
     playlist_download_thread = threading.Thread(
@@ -117,7 +107,6 @@ def start_download_playlist_thread():
 
     # Start the thread
     playlist_download_thread.start()
-
 
 # Create the main window
 window = tk.Tk()
