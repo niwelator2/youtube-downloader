@@ -69,7 +69,7 @@ def download_playlist():
     playlist = Playlist(link)
 
     for video_url in playlist.video_urls:
-        download_single_video(video_url, download_type_var.get(), save_directory)
+        download_single_video(video_url, download_type_playlist_var.get(), save_directory)
 
     print("Playlist download completed!")
 
@@ -135,6 +135,12 @@ right_frame.pack(side="right", padx=20)
 Label(right_frame, text="YouTube Playlist URL:").pack(pady=10)
 playlist_link_entry = Entry(right_frame, width=50)
 playlist_link_entry.pack()
+
+Label(right_frame, text="Download Type:").pack()
+download_type_playlist_var = StringVar(right_frame)
+download_type_playlist_var.set("MP4")
+download_type_menu = OptionMenu(right_frame, download_type_playlist_var, "MP4", "MP3")
+download_type_menu.pack()
 
 Label(right_frame, text="Save Directory:").pack()
 playlist_save_directory_entry = Entry(right_frame, width=50)
