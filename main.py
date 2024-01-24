@@ -15,6 +15,7 @@ from tkinter import (
 
 update_interval = 1
 
+
 def on_progress(stream, chunk, bytes_remaining, current_video):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
@@ -24,9 +25,7 @@ def on_progress(stream, chunk, bytes_remaining, current_video):
 def update_progress_bar(percent, current_video):
     progress_var.set(percent)
     progress_bar["value"] = percent
-    progress_label.config(
-        text=f"Progress: {percent:.2f}% (Video {current_video})"
-    )
+    progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
 
 
@@ -172,9 +171,7 @@ save_directory_entry.pack()
 select_directory_button = Button(
     left_frame,
     text="Select Directory",
-    command=lambda: select_save_directory(
-        save_directory_entry, load_last_directory()
-    ),
+    command=lambda: select_save_directory(save_directory_entry, load_last_directory()),
 )
 select_directory_button.pack()
 
