@@ -13,24 +13,19 @@ from tkinter import (
     filedialog,
 )
 
-current_count = 0
-total_count = 0
-current_video = 0 
+update_interval = 1
 
 def on_progress(stream, chunk, bytes_remaining, current_video):
-    global current_count, total_count
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
-    current_count = current_count + 1
-    total_count = total_count + 1
-    update_progress_bar(percent, current_count, total_count, current_video)
+    update_progress_bar(percent, current_video)
 
 
-def update_progress_bar(percent, current_count, total_count, current_video):
+def update_progress_bar(percent, current_video):
     progress_var.set(percent)
     progress_bar["value"] = percent
     progress_label.config(
-        text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos, Video {current_video})"
+        text=f"Progress: {percent:.2f}% (Video {current_video})"
     )
     window.update_idletasks()
 
@@ -72,14 +67,13 @@ def download_single_video(link, download_type, save_directory, current_video):
             return
 
         print("Download completed!")
-        update_progress_bar(100, current_count, total_count, current_video)
+        update_progress_bar(100, current_video)
 
     except Exception as e:
         print(f"An error has occurred: {str(e)}")
 
 
 def download_playlist(playlist_link, download_type, save_directory):
-    global current_video
     current_video = 1
     playlist = Playlist(playlist_link)
     total_videos = len(playlist.video_urls)
@@ -88,47 +82,54 @@ def download_playlist(playlist_link, download_type, save_directory):
         download_single_video(video_url, download_type, save_directory, current_video)
         current_video += 1
         percent_complete = (current_video / total_videos) * 100
-        update_progress_bar(
-            percent_complete, current_video, total_videos, current_video
-        )
+        update_progress_bar(percent_complete, current_video)
 
     print("Playlist download completed!")
 
 
-def select_save_directory(entry_widget):
-    directory = filedialog.askdirectory()
+def select_save_directory(entry_widget, initial_dir=None):
+    directory = filedialog.askdirectory(initialdir=initial_dir)
     if directory:
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
+        set_last_directory(directory)
+
+
+def set_last_directory(directory):
+    with open(".last_directory", "w") as f:
+        f.write(directory)
+
+
+def load_last_directory():
+    try:
+        with open(".last_directory", "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
+
 
 def download_single_video_threaded(link, download_type, save_directory):
-    global current_video  # Declare current_video as global here
-    current_video += 1  # Initialize current_video to 1
-    download_single_video(link, download_type, save_directory, current_video)
+    download_single_video(link, download_type, save_directory, 1)
+
 
 def download_playlist_threaded(playlist_link, download_type, save_directory):
-    global current_video  # Declare current_video as global here
-    current_video = 1  # Initialize current_video to 1
     playlist_download_thread = threading.Thread(
         target=start_download_playlist_threaded_inner,
-        args=(playlist_link, download_type, save_directory, current_video),
+        args=(playlist_link, download_type, save_directory),
     )
     playlist_download_thread.start()
 
 
 def start_download_playlist_threaded_inner(
-    playlist_link, download_type, save_directory, current_video
+    playlist_link, download_type, save_directory
 ):
     playlist = Playlist(playlist_link)
     total_videos = len(playlist.video_urls)
 
     for video_url in playlist.video_urls:
         download_single_video_threaded(video_url, download_type, save_directory)
-        current_video += 1
         percent_complete = (current_video / total_videos) * 100
-        update_progress_bar(
-            percent_complete, current_video, total_videos, current_video
-        )
+        update_progress_bar(percent_complete, current_video)
 
     print("Playlist download completed!")
 
@@ -171,7 +172,9 @@ save_directory_entry.pack()
 select_directory_button = Button(
     left_frame,
     text="Select Directory",
-    command=lambda: select_save_directory(save_directory_entry),
+    command=lambda: select_save_directory(
+        save_directory_entry, load_last_directory()
+    ),
 )
 select_directory_button.pack()
 
@@ -205,7 +208,9 @@ playlist_save_directory_entry.pack()
 select_playlist_directory_button = Button(
     right_frame,
     text="Select Directory",
-    command=lambda: select_save_directory(playlist_save_directory_entry),
+    command=lambda: select_save_directory(
+        playlist_save_directory_entry, load_last_directory()
+    ),
 )
 select_playlist_directory_button.pack()
 
@@ -225,6 +230,11 @@ progress_bar = ttk.Progressbar(
     window, length=200, mode="determinate", variable=progress_var
 )
 progress_bar.pack(pady=10)
+
+last_directory = load_last_directory()
+if last_directory:
+    save_directory_entry.insert(0, last_directory)
+    playlist_save_directory_entry.insert(0, last_directory)
 
 # Start the Tkinter main loop
 window.mainloop()
