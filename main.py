@@ -18,10 +18,10 @@ def on_progress(stream, chunk, bytes_remaining):
     percent = (bytes_downloaded / stream.filesize) * 100
     update_progress_bar(percent)
 
-def update_progress_bar(percent):
+def update_progress_bar(percent, current_count, total_count):
     progress_var.set(percent)
     progress_bar["value"] = percent
-    progress_label.config(text=f"Progress: {percent:.2f}%")
+    progress_label.config(text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos)")
     window.update_idletasks()
 
 def clean_video_title(title):
@@ -63,11 +63,14 @@ def download_playlist():
     link = playlist_link_entry.get()
     save_directory = playlist_save_directory_entry.get() or os.getcwd()
     playlist = Playlist(link)
+    total_videos = len(playlist.video_urls)
 
-    for video_url in playlist.video_urls:
+    for index, video_url in enumerate(playlist.video_urls, start=1):
         download_single_video(
             video_url, download_type_playlist_var.get(), save_directory
         )
+        percent_complete = (index / total_videos) * 100
+        update_progress_bar(percent_complete, index, total_videos)
 
     print("Playlist download completed!")
 
@@ -78,11 +81,9 @@ def select_save_directory(entry_widget):
         entry_widget.insert(0, directory)
 
 def download_single_video_threaded(link, download_type, save_directory):
-    # Your existing download_single_video function code here
     download_single_video(link, download_type, save_directory)
 
 def download_playlist_threaded():
-    # Your existing download_playlist function code here
     download_playlist()
 
 def start_download_single_video_thread():
