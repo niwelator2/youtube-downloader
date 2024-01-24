@@ -15,6 +15,7 @@ from tkinter import (
 
 current_count = 0
 total_count = 0
+current_video = 0 
 
 def on_progress(stream, chunk, bytes_remaining, current_video):
     global current_count, total_count
@@ -24,18 +25,28 @@ def on_progress(stream, chunk, bytes_remaining, current_video):
     total_count = total_count + 1
     update_progress_bar(percent, current_count, total_count, current_video)
 
+
 def update_progress_bar(percent, current_count, total_count, current_video):
     progress_var.set(percent)
     progress_bar["value"] = percent
-    progress_label.config(text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos, Video {current_video})")
+    progress_label.config(
+        text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos, Video {current_video})"
+    )
     window.update_idletasks()
+
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
 
+
 def download_single_video(link, download_type, save_directory, current_video):
     try:
-        youtube_object = YouTube(link, on_progress_callback=on_progress)
+        youtube_object = YouTube(
+            link,
+            on_progress_callback=lambda stream, chunk, bytes_remaining: on_progress(
+                stream, chunk, bytes_remaining, current_video
+            ),
+        )
         video_title = clean_video_title(youtube_object.title)
 
         if download_type == "MP4":
@@ -61,24 +72,28 @@ def download_single_video(link, download_type, save_directory, current_video):
             return
 
         print("Download completed!")
+        update_progress_bar(100, current_count, total_count, current_video)
 
     except Exception as e:
         print(f"An error has occurred: {str(e)}")
 
-def download_playlist():
-    link = playlist_link_entry.get()
-    save_directory = playlist_save_directory_entry.get() or os.getcwd()
-    playlist = Playlist(link)
+
+def download_playlist(playlist_link, download_type, save_directory):
+    global current_video
+    current_video = 1
+    playlist = Playlist(playlist_link)
     total_videos = len(playlist.video_urls)
 
-    for index, video_url in enumerate(playlist.video_urls, start=1):
-        download_single_video(
-            video_url, download_type_playlist_var.get(), save_directory
+    for video_url in playlist.video_urls:
+        download_single_video(video_url, download_type, save_directory, current_video)
+        current_video += 1
+        percent_complete = (current_video / total_videos) * 100
+        update_progress_bar(
+            percent_complete, current_video, total_videos, current_video
         )
-        percent_complete = (index / total_videos) * 100
-        update_progress_bar(percent_complete, index, total_videos)
 
     print("Playlist download completed!")
+
 
 def select_save_directory(entry_widget):
     directory = filedialog.askdirectory()
@@ -87,33 +102,36 @@ def select_save_directory(entry_widget):
         entry_widget.insert(0, directory)
 
 def download_single_video_threaded(link, download_type, save_directory):
-    download_single_video(link, download_type, save_directory)
+    global current_video  # Declare current_video as global here
+    current_video += 1  # Initialize current_video to 1
+    download_single_video(link, download_type, save_directory, current_video)
 
-def download_playlist_threaded():
-    download_playlist()
-
-def start_download_single_video_thread():
-    link = link_entry.get()
-    download_type = download_type_var.get()
-    save_directory = save_directory_entry.get() or os.getcwd()
-
-    # Create a new thread for the download
-    download_thread = threading.Thread(
-        target=download_single_video_threaded,
-        args=(link, download_type, save_directory),
-    )
-
-    # Start the thread
-    download_thread.start()
-
-def start_download_playlist_thread():
-    # Create a new thread for the playlist download
+def download_playlist_threaded(playlist_link, download_type, save_directory):
+    global current_video  # Declare current_video as global here
+    current_video = 1  # Initialize current_video to 1
     playlist_download_thread = threading.Thread(
-        target=download_playlist_threaded,
+        target=start_download_playlist_threaded_inner,
+        args=(playlist_link, download_type, save_directory, current_video),
     )
-
-    # Start the thread
     playlist_download_thread.start()
+
+
+def start_download_playlist_threaded_inner(
+    playlist_link, download_type, save_directory, current_video
+):
+    playlist = Playlist(playlist_link)
+    total_videos = len(playlist.video_urls)
+
+    for video_url in playlist.video_urls:
+        download_single_video_threaded(video_url, download_type, save_directory)
+        current_video += 1
+        percent_complete = (current_video / total_videos) * 100
+        update_progress_bar(
+            percent_complete, current_video, total_videos, current_video
+        )
+
+    print("Playlist download completed!")
+
 
 # Create the main window
 window = tk.Tk()
@@ -158,7 +176,11 @@ select_directory_button = Button(
 select_directory_button.pack()
 
 download_button = Button(
-    left_frame, text="Download Single Video", command=start_download_single_video_thread
+    left_frame,
+    text="Download Single Video",
+    command=lambda: download_single_video_threaded(
+        link_entry.get(), download_type_var.get(), save_directory_entry.get()
+    ),
 )
 download_button.pack()
 
@@ -188,7 +210,13 @@ select_playlist_directory_button = Button(
 select_playlist_directory_button.pack()
 
 download_button2 = Button(
-    right_frame, text="Download Playlist", command=start_download_playlist_thread
+    right_frame,
+    text="Download Playlist",
+    command=lambda: download_playlist_threaded(
+        playlist_link_entry.get(),
+        download_type_playlist_var.get(),
+        playlist_save_directory_entry.get(),
+    ),
 )
 download_button2.pack()
 
