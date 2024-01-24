@@ -13,21 +13,27 @@ from tkinter import (
     filedialog,
 )
 
-def on_progress(stream, chunk, bytes_remaining):
+current_count = 0
+total_count = 0
+
+def on_progress(stream, chunk, bytes_remaining, current_video):
+    global current_count, total_count
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
-    update_progress_bar(percent)
+    current_count = current_count + 1
+    total_count = total_count + 1
+    update_progress_bar(percent, current_count, total_count, current_video)
 
-def update_progress_bar(percent, current_count, total_count):
+def update_progress_bar(percent, current_count, total_count, current_video):
     progress_var.set(percent)
     progress_bar["value"] = percent
-    progress_label.config(text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos)")
+    progress_label.config(text=f"Progress: {percent:.2f}% ({current_count}/{total_count} videos, Video {current_video})")
     window.update_idletasks()
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
 
-def download_single_video(link, download_type, save_directory):
+def download_single_video(link, download_type, save_directory, current_video):
     try:
         youtube_object = YouTube(link, on_progress_callback=on_progress)
         video_title = clean_video_title(youtube_object.title)
@@ -152,7 +158,7 @@ select_directory_button = Button(
 select_directory_button.pack()
 
 download_button = Button(
-    left_frame, text="Download Single Video", command=start_download_playlist_thread
+    left_frame, text="Download Single Video", command=start_download_single_video_thread
 )
 download_button.pack()
 
