@@ -1,4 +1,5 @@
 import os
+import threading
 from pytube import YouTube, Playlist
 import tkinter as tk
 from tkinter import (
@@ -69,7 +70,9 @@ def download_playlist():
     playlist = Playlist(link)
 
     for video_url in playlist.video_urls:
-        download_single_video(video_url, download_type_playlist_var.get(), save_directory)
+        download_single_video(
+            video_url, download_type_playlist_var.get(), save_directory
+        )
 
     print("Playlist download completed!")
 
@@ -79,6 +82,41 @@ def select_save_directory(entry_widget):
     if directory:
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
+
+
+def download_single_video_threaded(link, download_type, save_directory):
+    # Your existing download_single_video function code here
+    download_single_video(link, download_type, save_directory)
+
+
+def download_playlist_threaded():
+    # Your existing download_playlist function code here
+    download_playlist()
+
+
+def start_download_single_video_thread():
+    link = link_entry.get()
+    download_type = download_type_var.get()
+    save_directory = save_directory_entry.get() or os.getcwd()
+
+    # Create a new thread for the download
+    download_thread = threading.Thread(
+        target=download_single_video_threaded,
+        args=(link, download_type, save_directory),
+    )
+
+    # Start the thread
+    download_thread.start()
+
+
+def start_download_playlist_thread():
+    # Create a new thread for the playlist download
+    playlist_download_thread = threading.Thread(
+        target=download_playlist_threaded,
+    )
+
+    # Start the thread
+    playlist_download_thread.start()
 
 
 # Create the main window
@@ -124,7 +162,7 @@ select_directory_button = Button(
 select_directory_button.pack()
 
 download_button = Button(
-    left_frame, text="Download Single Video", command=download_single_video
+    left_frame, text="Download Single Video", command=start_download_playlist_thread
 )
 download_button.pack()
 
@@ -154,7 +192,7 @@ select_playlist_directory_button = Button(
 select_playlist_directory_button.pack()
 
 download_button2 = Button(
-    right_frame, text="Download Playlist", command=download_playlist
+    right_frame, text="Download Playlist", command=start_download_playlist_thread
 )
 download_button2.pack()
 
