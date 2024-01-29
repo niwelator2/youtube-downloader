@@ -11,6 +11,7 @@ from tkinter import (
     StringVar,
     DoubleVar,
     filedialog,
+    messagebox,
 )
 
 update_interval = 1
@@ -31,6 +32,10 @@ def update_progress_bar(percent, current_video):
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
+
+
+def show_error_message(message):
+    messagebox.showerror("Error", message)
 
 
 def download_single_video(link, download_type, save_directory, current_video):
@@ -62,14 +67,16 @@ def download_single_video(link, download_type, save_directory, current_video):
             os.rename(audio_file, new_file)
 
         else:
-            print("Invalid download type. Choose 'MP4' or 'MP3'.")
+            error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
+            show_error_message(error_message)
             return
 
         print("Download completed!")
         update_progress_bar(100, current_video)
 
     except Exception as e:
-        print(f"An error has occurred: {str(e)}")
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 
 def download_playlist(playlist_link, download_type, save_directory):
@@ -108,15 +115,23 @@ def load_last_directory():
 
 
 def download_single_video_threaded(link, download_type, save_directory):
-    download_single_video(link, download_type, save_directory, 1)
+    try:
+        download_single_video(link, download_type, save_directory, 1)
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 
 def download_playlist_threaded(playlist_link, download_type, save_directory):
-    playlist_download_thread = threading.Thread(
-        target=start_download_playlist_threaded_inner,
-        args=(playlist_link, download_type, save_directory),
-    )
-    playlist_download_thread.start()
+    try:
+        playlist_download_thread = threading.Thread(
+            target=start_download_playlist_threaded_inner,
+            args=(playlist_link, download_type, save_directory),
+        )
+        playlist_download_thread.start()
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 
 def start_download_playlist_threaded_inner(
@@ -124,11 +139,12 @@ def start_download_playlist_threaded_inner(
 ):
     playlist = Playlist(playlist_link)
     total_videos = len(playlist.video_urls)
-
+    current_video = 0  
     for video_url in playlist.video_urls:
-        download_single_video_threaded(video_url, download_type, save_directory)
+        download_single_video_threaded(video_url, download_type, save_directory, current_video)
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
+        current_video += 1  
 
     print("Playlist download completed!")
 
@@ -137,6 +153,9 @@ def start_download_playlist_threaded_inner(
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
+
+# Set the icon for app 
+window.iconbitmap("./logo_do_yt_downloadera.ico")
 
 # Create a Label to display progress
 progress_var = DoubleVar()
