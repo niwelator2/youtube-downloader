@@ -114,9 +114,9 @@ def load_last_directory():
         return None
 
 
-def download_single_video_threaded(link, download_type, save_directory):
+def download_single_video_threaded(link, download_type, save_directory, current_video):
     try:
-        download_single_video(link, download_type, save_directory, 1)
+        download_single_video(link, download_type, save_directory, current_video)
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
@@ -139,12 +139,12 @@ def start_download_playlist_threaded_inner(
 ):
     playlist = Playlist(playlist_link)
     total_videos = len(playlist.video_urls)
-    current_video = 0  
+    current_video = 1  # Start from 1 for better user experience
     for video_url in playlist.video_urls:
-        download_single_video_threaded(video_url, download_type, save_directory, current_video)
+        download_single_video(video_url, download_type, save_directory, current_video)
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
-        current_video += 1  
+        current_video += 1  # Increment after downloading each video
 
     print("Playlist download completed!")
 
@@ -155,7 +155,7 @@ window.title("YouTube Downloader")
 window.geometry("800x300")
 
 # Set the icon for app 
-window.iconbitmap("./logo_do_yt_downloadera.ico")
+#window.iconbitmap("./logo_do_yt_downloadera.ico")
 
 # Create a Label to display progress
 progress_var = DoubleVar()
@@ -198,7 +198,7 @@ download_button = Button(
     left_frame,
     text="Download Single Video",
     command=lambda: download_single_video_threaded(
-        link_entry.get(), download_type_var.get(), save_directory_entry.get()
+        link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
     ),
 )
 download_button.pack()
