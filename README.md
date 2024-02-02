@@ -1,5 +1,15 @@
 # Youtube downloader
 
+# Build for windows exe comand
+
+1.Go to src directory and run the following command:
+
+```
+pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole  main.py
+```
+
+Then it will put exe file in windows folder
+
 # How to use
 
 1.Install the required libraries:
