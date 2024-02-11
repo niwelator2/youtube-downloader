@@ -2,7 +2,7 @@
 
 # Set the path to the source files
 SRC_DIR="src"
-
+REQ_DIR="."
 # Set the destination directory for installation
 DEST_DIR="/usr/bin"
 
@@ -23,7 +23,7 @@ else
 fi
 
 # Install Python dependencies from requirements.txt
-if pip3 install -r "$SRC_DIR/requirements.txt"; then
+if pip3 install -r "$REQ_DIR/requirements.txt"; then
     echo "Python dependencies installed successfully"
 else
     echo "Error: Failed to install Python dependencies" >&2
