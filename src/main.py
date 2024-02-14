@@ -37,8 +37,7 @@ def clean_video_title(title):
 def show_error_message(message):
     messagebox.showerror("Error", message)
 
-
-def download_single_video(link, download_type, save_directory, current_video):
+def download_single_video(link, download_type, save_directory, current_video, downloaded_titles):
     try:
         youtube_object = YouTube(
             link,
@@ -47,6 +46,12 @@ def download_single_video(link, download_type, save_directory, current_video):
             ),
         )
         video_title = clean_video_title(youtube_object.title)
+
+        if video_title in downloaded_titles:
+            print(f"Skipping duplicate video: {video_title}")
+            return
+
+        downloaded_titles.add(video_title)
 
         if download_type == "MP4":
             stream = youtube_object.streams.get_highest_resolution()
@@ -155,7 +160,7 @@ window.title("YouTube Downloader")
 window.geometry("800x300")
 
 # Set the icon for app 
-#window.iconbitmap("./logo_do_yt_downloadera.ico")
+#window.iconbitmap("./logo.ico")
 
 # Create a Label to display progress
 progress_var = DoubleVar()
