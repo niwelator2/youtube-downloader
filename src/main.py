@@ -57,33 +57,29 @@ def download_single_video(
         downloaded_titles.add(video_title)
 
         if download_type == "MP4":
+            video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
+            if os.path.exists(video_file_path):
+                print(f"Video '{video_title}' already exists. Skipping.")
+                return
             stream = youtube_object.streams.get_highest_resolution()
             print("Downloading video:", video_title)
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
             new_file = os.path.join(save_directory, f"{video_title}.mp4")
-            if os.path.exists(new_file):
-                base, ext = os.path.splitext(new_file)
-                count = 1
-                while os.path.exists(f"{base} ({count}){ext}"):
-                    count += 1
-                new_file = f"{base} ({count}){ext}"
             os.rename(video_file, new_file)
 
         elif download_type == "MP3":
+            audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
+            if os.path.exists(audio_file_path):
+                print(f"Audio '{video_title}' already exists. Skipping.")
+                return
             stream = youtube_object.streams.filter(only_audio=True).first()
             print("Downloading audio (MP3):", video_title)
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
-            if os.path.exists(new_file):
-                base, ext = os.path.splitext(new_file)
-                count = 1
-                while os.path.exists(f"{base} ({count}){ext}"):
-                    count += 1
-                new_file = f"{base} ({count}){ext}"
             os.rename(audio_file, new_file)
 
         else:
