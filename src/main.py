@@ -37,7 +37,10 @@ def clean_video_title(title):
 def show_error_message(message):
     messagebox.showerror("Error", message)
 
-def download_single_video(link, download_type, save_directory, current_video, downloaded_titles):
+
+def download_single_video(
+    link, download_type, save_directory, current_video, downloaded_titles
+):
     try:
         youtube_object = YouTube(
             link,
@@ -60,6 +63,12 @@ def download_single_video(link, download_type, save_directory, current_video, do
                 output_path=save_directory, filename=video_title
             )
             new_file = os.path.join(save_directory, f"{video_title}.mp4")
+            if os.path.exists(new_file):
+                base, ext = os.path.splitext(new_file)
+                count = 1
+                while os.path.exists(f"{base} ({count}){ext}"):
+                    count += 1
+                new_file = f"{base} ({count}){ext}"
             os.rename(video_file, new_file)
 
         elif download_type == "MP3":
@@ -69,6 +78,12 @@ def download_single_video(link, download_type, save_directory, current_video, do
                 output_path=save_directory, filename=video_title
             )
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
+            if os.path.exists(new_file):
+                base, ext = os.path.splitext(new_file)
+                count = 1
+                while os.path.exists(f"{base} ({count}){ext}"):
+                    count += 1
+                new_file = f"{base} ({count}){ext}"
             os.rename(audio_file, new_file)
 
         else:
@@ -121,7 +136,7 @@ def load_last_directory():
 
 def download_single_video_threaded(link, download_type, save_directory, current_video):
     try:
-        download_single_video(link, download_type, save_directory, current_video)
+        download_single_video(link, download_type, save_directory, current_video, set())
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
@@ -146,7 +161,9 @@ def start_download_playlist_threaded_inner(
     total_videos = len(playlist.video_urls)
     current_video = 1  # Start from 1 for better user experience
     for video_url in playlist.video_urls:
-        download_single_video(video_url, download_type, save_directory, current_video)
+        download_single_video(
+            video_url, download_type, save_directory, current_video, set()
+        )
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
         current_video += 1  # Increment after downloading each video
@@ -159,8 +176,8 @@ window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
 
-# Set the icon for app 
-#window.iconbitmap("./logo.ico")
+# Set the icon for app
+# window.iconbitmap("./logo.ico")
 
 # Create a Label to display progress
 progress_var = DoubleVar()
