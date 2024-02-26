@@ -37,7 +37,6 @@ def clean_video_title(title):
 def show_error_message(message):
     messagebox.showerror("Error", message)
 
-
 def download_single_video(
     link, download_type, save_directory, current_video, downloaded_titles
 ):
@@ -52,6 +51,7 @@ def download_single_video(
 
         if video_title in downloaded_titles:
             print(f"Skipping duplicate video: {video_title}")
+            messagebox.showinfo("Duplicate Video", f"Skipping duplicate video: {video_title}")
             return
 
         downloaded_titles.add(video_title)
@@ -60,6 +60,7 @@ def download_single_video(
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
                 print(f"Video '{video_title}' already exists. Skipping.")
+                messagebox.showinfo("Video Already Exists", f"Video '{video_title}' already exists. Skipping.")
                 return
             stream = youtube_object.streams.get_highest_resolution()
             print("Downloading video:", video_title)
@@ -73,6 +74,7 @@ def download_single_video(
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
                 print(f"Audio '{video_title}' already exists. Skipping.")
+                messagebox.showinfo("Audio Already Exists", f"Audio '{video_title}' already exists. Skipping.")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             print("Downloading audio (MP3):", video_title)
