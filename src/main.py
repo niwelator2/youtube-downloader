@@ -13,7 +13,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-
+from plyer import notification
 update_interval = 1
 
 
@@ -48,10 +48,16 @@ def download_single_video(
             ),
         )
         video_title = clean_video_title(youtube_object.title)
-
         if video_title in downloaded_titles:
-            print(f"Skipping duplicate video: {video_title}")
-            messagebox.showinfo("Duplicate Video", f"Skipping duplicate video: {video_title}")
+            #print(f"Skipping duplicate video: {video_title}")
+            notification_title = "Duplicate_video"
+            notification_text = "Skipping duplicate video"
+            notification_timeout = 5  # Time in seconds for the notification to stay visible
+            notification.notify(
+                title=notification_title,
+                message=notification_text,
+                timeout=notification_timeout
+            )
             return
 
         downloaded_titles.add(video_title)
@@ -60,7 +66,6 @@ def download_single_video(
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
                 print(f"Video '{video_title}' already exists. Skipping.")
-                messagebox.showinfo("Video Already Exists", f"Video '{video_title}' already exists. Skipping.")
                 return
             stream = youtube_object.streams.get_highest_resolution()
             print("Downloading video:", video_title)
@@ -74,7 +79,6 @@ def download_single_video(
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
                 print(f"Audio '{video_title}' already exists. Skipping.")
-                messagebox.showinfo("Audio Already Exists", f"Audio '{video_title}' already exists. Skipping.")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             print("Downloading audio (MP3):", video_title)
@@ -271,6 +275,8 @@ last_directory = load_last_directory()
 if last_directory:
     save_directory_entry.insert(0, last_directory)
     playlist_save_directory_entry.insert(0, last_directory)
+
+
 
 # Start the Tkinter main loop
 window.mainloop()
