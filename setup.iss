@@ -20,12 +20,12 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=C:\Users\Pilif\Documents\youtube-downloader\license.txt
+LicenseFile=C:\Users\Filip\Documents\youtube-downloader\license.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputDir=C:\Users\Pilif\Documents\youtube-downloader\windows
+OutputDir=C:\Users\Filip\Documents\youtube-downloader\windows
 OutputBaseFilename=Youtube-Downloader.2.0_setup
-SetupIconFile=C:\Users\Pilif\Documents\youtube-downloader\src\logo.ico
+SetupIconFile=C:\Users\Filip\Documents\youtube-downloader\src\logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -37,9 +37,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\Pilif\Documents\youtube-downloader\windows\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Pilif\Documents\youtube-downloader\venv\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\Pilif\Documents\youtube-downloader\src\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Filip\Documents\youtube-downloader\windows\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Filip\Documents\youtube-downloader\venv\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Filip\Documents\youtube-downloader\src\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

@@ -169,8 +169,8 @@ def start_download_playlist_threaded_inner(
     total_videos = len(playlist.video_urls)
     current_video = 1  # Start from 1 for better user experience
     for video_url in playlist.video_urls:
-        download_single_video(
-            video_url, download_type, save_directory, current_video, set()
+        download_single_video_threaded(
+            video_url, download_type, save_directory, current_video
         )
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
