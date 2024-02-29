@@ -24,7 +24,7 @@ LicenseFile=C:\Users\Pilif\Documents\youtube-downloader\license.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\Pilif\Documents\youtube-downloader\windows
-OutputBaseFilename=Youtube-Downloader.1.3_windows_x86_x64_setup
+OutputBaseFilename=Youtube-Downloader.2.0_setup
 SetupIconFile=C:\Users\Pilif\Documents\youtube-downloader\src\logo.ico
 Compression=lzma
 SolidCompression=yes

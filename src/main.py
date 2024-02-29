@@ -13,7 +13,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-
+from plyer import notification
 update_interval = 1
 
 
@@ -37,7 +37,6 @@ def clean_video_title(title):
 def show_error_message(message):
     messagebox.showerror("Error", message)
 
-
 def download_single_video(
     link, download_type, save_directory, current_video, downloaded_titles
 ):
@@ -49,9 +48,16 @@ def download_single_video(
             ),
         )
         video_title = clean_video_title(youtube_object.title)
-
         if video_title in downloaded_titles:
-            print(f"Skipping duplicate video: {video_title}")
+            #print(f"Skipping duplicate video: {video_title}")
+            notification_title = "Duplicate_video"
+            notification_text = "Skipping duplicate video"
+            notification_timeout = 5  # Time in seconds for the notification to stay visible
+            notification.notify(
+                title=notification_title,
+                message=notification_text,
+                timeout=notification_timeout
+            )
             return
 
         downloaded_titles.add(video_title)
@@ -269,6 +275,8 @@ last_directory = load_last_directory()
 if last_directory:
     save_directory_entry.insert(0, last_directory)
     playlist_save_directory_entry.insert(0, last_directory)
+
+
 
 # Start the Tkinter main loop
 window.mainloop()
