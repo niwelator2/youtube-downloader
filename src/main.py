@@ -13,6 +13,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
+from plyer import notification
 
 update_interval = 1
 
@@ -49,9 +50,20 @@ def download_single_video(
             ),
         )
         video_title = clean_video_title(youtube_object.title)
-
         if video_title in downloaded_titles:
-            print(f"Skipping duplicate video: {video_title}")
+            # print(f"Skipping duplicate video: {video_title}")
+            notification_title = "Duplicate_video"
+            notification_text = "Skipping duplicate video"
+            notification_timeout = (
+                5  # Time in seconds for the notification to stay visible
+            )
+            notification.notify(
+                title=notification_title,
+                message=notification_text,
+                timeout=notification_timeout,
+                toast=False,
+                app_icon="logo.ico",
+            )
             return
 
         downloaded_titles.add(video_title)
@@ -167,13 +179,15 @@ def start_download_playlist_threaded_inner(
     print("Playlist download completed!")
 
 
+# icon_path = os.path.abspath("logo.ico")
+
 # Create the main window
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
 
 # Set the icon for app
-# window.iconbitmap("./logo.ico")
+# window.iconbitmap(icon_path)
 
 # Create a Label to display progress
 progress_var = DoubleVar()
@@ -269,6 +283,7 @@ last_directory = load_last_directory()
 if last_directory:
     save_directory_entry.insert(0, last_directory)
     playlist_save_directory_entry.insert(0, last_directory)
+
 
 # Start the Tkinter main loop
 window.mainloop()
