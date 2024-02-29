@@ -1,53 +1,40 @@
-# Youtube downloader
+# YouTube Downloader
 
-# Build for windows exe comand
+YouTube Downloader is a simple Python application that allows users to download single YouTube videos or entire playlists as MP4 or MP3 files.
 
-1.Go to src directory and run the following command:
+## Features
 
-```
-pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole  main.py
-```
+- Download single YouTube videos by providing the video URL.
+- Download entire YouTube playlists by providing the playlist URL.
+- Choose between downloading videos as MP4 or extracting audio as MP3.
+- Select the save directory for downloaded files.
 
-Then it will put exe file in windows folder
+## Dependencies
 
-# How to use
+- [pytube](https://github.com/nficano/pytube): A lightweight, dependency-free Python library to fetch YouTube content.
+- [plyer](https://github.com/kivy/plyer): A platform-independent API to access features commonly found on various platforms, including notifications.
 
-1.Install the required libraries:
+## Installation
 
-```
-pip install pytube tqdm
-```
+1. Clone the repository:
 
-2.Run the script:
 
-```
-python main.py
-```
+   ```bash
+   git clone https://github.com/yourusername/youtube-downloader.git
+   cd youtube-downloader
+   cd windows/
+   ./Youtube-Downloader.2.0_windows_x64_setup.exe
+   ```
+   
+## Build 
 
-3.Enter the YouTube video URL when prompted.
+    ```bash
+    python -m venv venv
+    pip install -r requirements.txt
+    cd src/
+    pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py
+    ```
 
-4.Choose the download type ('mp4', 'mp3', or 'audio').
-
-5.Enter the directory to save the downloaded files.
-
-# Example
-
-Suppose you want to download a YouTube video with the following details:
-
-URL: https://www.youtube.com/watch?v=79DijItQXMM
-Download Type: mp4
-Directory: videos
-
-After running the script and providing the required information, the video will be downloaded and saved to the videos directory.
-
-# Pushing to GitLab
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/niwelator2/youtube-downloader.git
-git branch -M main
-git push -uf origin main
-```
 
 # License
 
