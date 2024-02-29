@@ -49,7 +49,8 @@ YouTube Downloader is a simple Python application that allows users to download 
 
 ## Credits
  
-Author - Filip Poplawski (@niwelator2)
+Author - FilipP (@niwelator2)
+Reporter - Veridicus (@kkwestarz002)
 
 
 ## License
