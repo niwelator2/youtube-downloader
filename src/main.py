@@ -82,10 +82,10 @@ def download_single_video(
         if download_type == "MP4":
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
-                display_message("Video already exists.", "{video_title}")
+                display_message("Video already exists.", f"{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            display_message("Downloading viideo:", "{video_title}")
+            display_message("Downloading viideo", f"{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -95,10 +95,10 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                display_message("Audio already exists. Skipping", "{video_title}")
+                display_message("Audio already exists. Skipping", f"{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-
+            display_message("Downloading viideo", f"{video_title}")
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -106,11 +106,12 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
         else:
+            display_message("Invalid download type. Choose 'MP4' or 'MP3'. ", "")
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
 
-        display_message("Download completed!", "none")
+        display_message("Download completed!", "")
         update_progress_bar(100, current_video)
 
     except Exception as e:
@@ -238,14 +239,6 @@ def setup_gui():
         ),
     )
     download_button.pack()
-
-    # # Center section for display message
-    # center_frame = ttk.Frame(window)
-    # center_frame.pack(
-    #     side="top", expand=True
-    # )  # Adjust padding and expansion
-
-    # Label(center_frame, text="System message").pack(pady=10)
 
     # Right section for playlist download
     right_frame = ttk.Frame(window)
