@@ -46,6 +46,11 @@ YouTube Downloader is a simple Python application that allows users to download 
     cd src/
     pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py
    ``` 
+## Build without console window
+
+   ```bash
+       pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. main.py
+   ```
 
 ## Credits
  

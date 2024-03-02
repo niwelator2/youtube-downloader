@@ -18,6 +18,13 @@ from plyer import notification
 update_interval = 1
 
 
+def display_message(message):
+    text_area.config(state=tk.NORMAL)
+    text_area.insert(tk.END, message + "\n")
+    text_area.see(tk.END)
+    text_area.config(state=tk.DISABLED)
+
+
 def on_progress(stream, chunk, bytes_remaining, current_video):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
@@ -51,19 +58,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            # print(f"Skipping duplicate video: {video_title}")
-            notification_title = "Duplicate_video"
-            notification_text = "Skipping duplicate video"
-            notification_timeout = (
-                5  # Time in seconds for the notification to stay visible
-            )
-            notification.notify(
-                title=notification_title,
-                message=notification_text,
-                timeout=notification_timeout,
-                toast=False,
-                app_icon="logo.ico",
-            )
+            display_message("Skipping duplicatee video")
             return
 
         downloaded_titles.add(video_title)
@@ -71,10 +66,10 @@ def download_single_video(
         if download_type == "MP4":
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
-                print(f"Video '{video_title}' already exists. Skipping.")
+                display_message("Video {video_title} already exists.")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            print("Downloading video:", video_title)
+            display_message("Downloading viideo:", video_title)
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -84,10 +79,10 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                print(f"Audio '{video_title}' already exists. Skipping.")
+                display_message("Audio {video_title} already exists. Skipping")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-            print("Downloading audio (MP3):", video_title)
+            display_message("Downloading audio (MP3):", video_title)
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -99,7 +94,7 @@ def download_single_video(
             show_error_message(error_message)
             return
 
-        print("Download completed!")
+        display_message("Download completed!")
         update_progress_bar(100, current_video)
 
     except Exception as e:
@@ -118,7 +113,7 @@ def download_playlist(playlist_link, download_type, save_directory):
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
 
-    print("Playlist download completed!")
+    display_message("Playlist download completed!")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -176,7 +171,7 @@ def start_download_playlist_threaded_inner(
         update_progress_bar(percent_complete, current_video)
         current_video += 1  # Increment after downloading each video
 
-    print("Playlist download completed!")
+    display_message("Playlist download completed!")
 
 
 # icon_path = os.path.abspath("logo.ico")
@@ -185,6 +180,10 @@ def start_download_playlist_threaded_inner(
 window = tk.Tk()
 window.title("YouTube Downloader")
 window.geometry("800x300")
+
+
+text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED)
+text_area.pack(fill=tk.BOTH, expand=True)
 
 # Set the icon for app
 # window.iconbitmap(icon_path)
