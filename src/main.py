@@ -179,23 +179,10 @@ def setup_gui():
     window.title("YouTube Downloader")
     window.geometry("800x300")
 
-    # text_area = tk.Text( wrap=tk.WORD, state=tk.DISABLED)
-    # text_area.pack(fill=tk.BOTH, expand=True)
-
-    # Set the icon for app
-    # window.iconbitmap(icon_path)
-
     # Create a Label to display progress
     progress_var = DoubleVar()
     progress_label = Label(window, text="Progress: 0.00%")
     progress_label.pack(pady=10)
-
-    # Create and pack GUI elements with styling
-    style = ttk.Style()
-    style.configure("TLabel", font=("Helvetica", 12))
-    style.configure("TButton", font=("Helvetica", 12))
-    style.configure("TEntry", font=("Helvetica", 12))
-    style.configure("TMenubutton", font=("Helvetica", 12))
 
     # Left section for single video download
     left_frame = ttk.Frame(window)
@@ -235,10 +222,15 @@ def setup_gui():
 
     # Center section for display message
     center_frame = ttk.Frame(window)
-    center_frame.pack(side="bottom", padx=20)
-    Label(center_frame, text="System mesage").pack(pady=10)
+    center_frame.pack(
+        side="top", expand=True
+    )  # Adjust padding and expansion
 
-    text_area = tk.Text(center_frame, wrap=tk.WORD, state=tk.DISABLED)
+    Label(center_frame, text="System message").pack(pady=10)
+
+    text_area = tk.Text(
+        center_frame, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20
+    )
     text_area.pack(fill=tk.BOTH, expand=True)
 
     # Right section for playlist download
