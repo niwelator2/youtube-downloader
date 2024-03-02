@@ -1,5 +1,6 @@
 import os
 import threading
+import queue
 from pytube import YouTube, Playlist
 import tkinter as tk
 from tkinter import (
@@ -16,13 +17,28 @@ from tkinter import (
 from plyer import notification
 
 update_interval = 1
+# Create a queue for message display
+message_queue = queue.Queue()
 
 
-def display_message(message):
-    text_area.config(state=tk.NORMAL)
-    text_area.insert(tk.END, message + "\n")
-    text_area.see(tk.END)
-    text_area.config(state=tk.DISABLED)
+def display_message(message, video_title):
+    message_queue.put((message, video_title))
+
+    # Start a separate thread to handle displaying messages
+    threading.Thread(target=display_messages_from_queue).start()
+
+
+def display_messages_from_queue():
+    while not message_queue.empty():
+        message, video_title = message_queue.get()
+        title = "System message"
+        if video_title:
+            title = video_title
+        text_area.config(state=tk.NORMAL)
+        text_area.insert(tk.END, f"{title}: {message}\n")
+        text_area.see(tk.END)
+        text_area.config(state=tk.DISABLED)
+        message_queue.task_done()
 
 
 def on_progress(stream, chunk, bytes_remaining, current_video):
@@ -58,7 +74,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            display_message("Skipping duplicatee video")
+            display_message("Skipping duplicatee video", "none")
             return
 
         downloaded_titles.add(video_title)
@@ -66,10 +82,10 @@ def download_single_video(
         if download_type == "MP4":
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
-                display_message("Video {video_title} already exists.")
+                display_message("Video already exists.", "{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            display_message("Downloading viideo:", video_title)
+            display_message("Downloading viideo:", "{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -79,10 +95,10 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                display_message("Audio {video_title} already exists. Skipping")
+                display_message("Audio already exists. Skipping", "{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-            display_message("Downloading audio (MP3):", video_title)
+
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -94,7 +110,7 @@ def download_single_video(
             show_error_message(error_message)
             return
 
-        display_message("Download completed!")
+        display_message("Download completed!", "none")
         update_progress_bar(100, current_video)
 
     except Exception as e:
@@ -113,7 +129,7 @@ def download_playlist(playlist_link, download_type, save_directory):
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
 
-    display_message("Playlist download completed!")
+    display_message("Playlist download completed!", "none")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -184,6 +200,9 @@ def setup_gui():
     progress_label = Label(window, text="Progress: 0.00%")
     progress_label.pack(pady=10)
 
+    # Create a text area for system mesege
+    text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20)
+    text_area.pack(fill=tk.BOTH, expand=True)
     # Left section for single video download
     left_frame = ttk.Frame(window)
     left_frame.pack(side="left", padx=20)
@@ -220,18 +239,13 @@ def setup_gui():
     )
     download_button.pack()
 
-    # Center section for display message
-    center_frame = ttk.Frame(window)
-    center_frame.pack(
-        side="top", expand=True
-    )  # Adjust padding and expansion
+    # # Center section for display message
+    # center_frame = ttk.Frame(window)
+    # center_frame.pack(
+    #     side="top", expand=True
+    # )  # Adjust padding and expansion
 
-    Label(center_frame, text="System message").pack(pady=10)
-
-    text_area = tk.Text(
-        center_frame, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20
-    )
-    text_area.pack(fill=tk.BOTH, expand=True)
+    # Label(center_frame, text="System message").pack(pady=10)
 
     # Right section for playlist download
     right_frame = ttk.Frame(window)
