@@ -1,5 +1,6 @@
 import os
 import threading
+import queue
 from pytube import YouTube, Playlist
 import tkinter as tk
 from tkinter import (
@@ -16,6 +17,28 @@ from tkinter import (
 from plyer import notification
 
 update_interval = 1
+# Create a queue for message display
+message_queue = queue.Queue()
+
+
+def display_message(message, video_title):
+    message_queue.put((message, video_title))
+
+    # Start a separate thread to handle displaying messages
+    threading.Thread(target=display_messages_from_queue).start()
+
+
+def display_messages_from_queue():
+    while not message_queue.empty():
+        message, video_title = message_queue.get()
+        title = "System message"
+        if video_title:
+            title = video_title
+        text_area.config(state=tk.NORMAL)
+        text_area.insert(tk.END, f"{title}: {message}\n")
+        text_area.see(tk.END)
+        text_area.config(state=tk.DISABLED)
+        message_queue.task_done()
 
 
 def on_progress(stream, chunk, bytes_remaining, current_video):
@@ -51,19 +74,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            # print(f"Skipping duplicate video: {video_title}")
-            notification_title = "Duplicate_video"
-            notification_text = "Skipping duplicate video"
-            notification_timeout = (
-                5  # Time in seconds for the notification to stay visible
-            )
-            notification.notify(
-                title=notification_title,
-                message=notification_text,
-                timeout=notification_timeout,
-                toast=False,
-                app_icon="logo.ico",
-            )
+            display_message("Skipping duplicatee video", "none")
             return
 
         downloaded_titles.add(video_title)
@@ -71,10 +82,10 @@ def download_single_video(
         if download_type == "MP4":
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
-                print(f"Video '{video_title}' already exists. Skipping.")
+                display_message("Video already exists.", f"{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            print("Downloading video:", video_title)
+            display_message("Downloading viideo", f"{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -84,10 +95,10 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                print(f"Audio '{video_title}' already exists. Skipping.")
+                display_message("Audio already exists. Skipping", f"{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-            print("Downloading audio (MP3):", video_title)
+            display_message("Downloading viideo", f"{video_title}")
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -95,11 +106,12 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
         else:
+            display_message("Invalid download type. Choose 'MP4' or 'MP3'. ", "")
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
 
-        print("Download completed!")
+        display_message("Download completed!", "")
         update_progress_bar(100, current_video)
 
     except Exception as e:
@@ -118,7 +130,7 @@ def download_playlist(playlist_link, download_type, save_directory):
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
 
-    print("Playlist download completed!")
+    display_message("Playlist download completed!", "none")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -176,114 +188,114 @@ def start_download_playlist_threaded_inner(
         update_progress_bar(percent_complete, current_video)
         current_video += 1  # Increment after downloading each video
 
-    print("Playlist download completed!")
+    display_message("Playlist download completed!")
 
 
-# icon_path = os.path.abspath("logo.ico")
+def setup_gui():
+    window = tk.Tk()
+    window.title("YouTube Downloader")
+    window.geometry("800x300")
 
-# Create the main window
-window = tk.Tk()
-window.title("YouTube Downloader")
-window.geometry("800x300")
+    # Create a Label to display progress
+    progress_var = DoubleVar()
+    progress_label = Label(window, text="Progress: 0.00%")
+    progress_label.pack(pady=10)
 
-# Set the icon for app
-# window.iconbitmap(icon_path)
+    # Create a text area for system mesege
+    text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20)
+    text_area.pack(fill=tk.BOTH, expand=True)
+    # Left section for single video download
+    left_frame = ttk.Frame(window)
+    left_frame.pack(side="left", padx=20)
 
-# Create a Label to display progress
-progress_var = DoubleVar()
-progress_label = Label(window, text="Progress: 0.00%")
-progress_label.pack(pady=10)
+    Label(left_frame, text="YouTube URL:").pack(pady=10)
+    link_entry = Entry(left_frame, width=50)
+    link_entry.pack()
 
-# Create and pack GUI elements with styling
-style = ttk.Style()
-style.configure("TLabel", font=("Helvetica", 12))
-style.configure("TButton", font=("Helvetica", 12))
-style.configure("TEntry", font=("Helvetica", 12))
-style.configure("TMenubutton", font=("Helvetica", 12))
+    Label(left_frame, text="Download Type:").pack()
+    download_type_var = StringVar(left_frame)
+    download_type_var.set("MP4")
+    download_type_menu = OptionMenu(left_frame, download_type_var, "MP4", "MP3")
+    download_type_menu.pack()
 
-# Left section for single video download
-left_frame = ttk.Frame(window)
-left_frame.pack(side="left", padx=20)
+    Label(left_frame, text="Save Directory:").pack()
+    save_directory_entry = Entry(left_frame, width=50)
+    save_directory_entry.pack()
 
-Label(left_frame, text="YouTube URL:").pack(pady=10)
-link_entry = Entry(left_frame, width=50)
-link_entry.pack()
+    select_directory_button = Button(
+        left_frame,
+        text="Select Directory",
+        command=lambda: select_save_directory(
+            save_directory_entry, load_last_directory()
+        ),
+    )
+    select_directory_button.pack()
 
-Label(left_frame, text="Download Type:").pack()
-download_type_var = StringVar(left_frame)
-download_type_var.set("MP4")
-download_type_menu = OptionMenu(left_frame, download_type_var, "MP4", "MP3")
-download_type_menu.pack()
+    download_button = Button(
+        left_frame,
+        text="Download Single Video",
+        command=lambda: download_single_video_threaded(
+            link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
+        ),
+    )
+    download_button.pack()
 
-Label(left_frame, text="Save Directory:").pack()
-save_directory_entry = Entry(left_frame, width=50)
-save_directory_entry.pack()
+    # Right section for playlist download
+    right_frame = ttk.Frame(window)
+    right_frame.pack(side="right", padx=20)
 
-select_directory_button = Button(
-    left_frame,
-    text="Select Directory",
-    command=lambda: select_save_directory(save_directory_entry, load_last_directory()),
-)
-select_directory_button.pack()
+    Label(right_frame, text="YouTube Playlist URL:").pack(pady=10)
+    playlist_link_entry = Entry(right_frame, width=50)
+    playlist_link_entry.pack()
 
-download_button = Button(
-    left_frame,
-    text="Download Single Video",
-    command=lambda: download_single_video_threaded(
-        link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
-    ),
-)
-download_button.pack()
+    Label(right_frame, text="Download Type:").pack()
+    download_type_playlist_var = StringVar(right_frame)
+    download_type_playlist_var.set("MP4")
+    download_type_menu = OptionMenu(
+        right_frame, download_type_playlist_var, "MP4", "MP3"
+    )
+    download_type_menu.pack()
 
-# Right section for playlist download
-right_frame = ttk.Frame(window)
-right_frame.pack(side="right", padx=20)
+    Label(right_frame, text="Save Directory:").pack()
+    playlist_save_directory_entry = Entry(right_frame, width=50)
+    playlist_save_directory_entry.pack()
 
-Label(right_frame, text="YouTube Playlist URL:").pack(pady=10)
-playlist_link_entry = Entry(right_frame, width=50)
-playlist_link_entry.pack()
+    select_playlist_directory_button = Button(
+        right_frame,
+        text="Select Directory",
+        command=lambda: select_save_directory(
+            playlist_save_directory_entry, load_last_directory()
+        ),
+    )
+    select_playlist_directory_button.pack()
 
-Label(right_frame, text="Download Type:").pack()
-download_type_playlist_var = StringVar(right_frame)
-download_type_playlist_var.set("MP4")
-download_type_menu = OptionMenu(right_frame, download_type_playlist_var, "MP4", "MP3")
-download_type_menu.pack()
+    download_button2 = Button(
+        right_frame,
+        text="Download Playlist",
+        command=lambda: download_playlist_threaded(
+            playlist_link_entry.get(),
+            download_type_playlist_var.get(),
+            playlist_save_directory_entry.get(),
+        ),
+    )
+    download_button2.pack()
 
-Label(right_frame, text="Save Directory:").pack()
-playlist_save_directory_entry = Entry(right_frame, width=50)
-playlist_save_directory_entry.pack()
+    # Progress bar
+    progress_bar = ttk.Progressbar(
+        window, length=200, mode="determinate", variable=progress_var
+    )
+    progress_bar.pack(pady=10)
 
-select_playlist_directory_button = Button(
-    right_frame,
-    text="Select Directory",
-    command=lambda: select_save_directory(
-        playlist_save_directory_entry, load_last_directory()
-    ),
-)
-select_playlist_directory_button.pack()
+    last_directory = load_last_directory()
+    if last_directory:
+        save_directory_entry.insert(0, last_directory)
+        playlist_save_directory_entry.insert(0, last_directory)
 
-download_button2 = Button(
-    right_frame,
-    text="Download Playlist",
-    command=lambda: download_playlist_threaded(
-        playlist_link_entry.get(),
-        download_type_playlist_var.get(),
-        playlist_save_directory_entry.get(),
-    ),
-)
-download_button2.pack()
+    return window, text_area, progress_var, progress_label, progress_bar
 
-# Progress bar
-progress_bar = ttk.Progressbar(
-    window, length=200, mode="determinate", variable=progress_var
-)
-progress_bar.pack(pady=10)
 
-last_directory = load_last_directory()
-if last_directory:
-    save_directory_entry.insert(0, last_directory)
-    playlist_save_directory_entry.insert(0, last_directory)
-
+# Call setup_gui to initialize GUI elements
+window, text_area, progress_var, progress_label, progress_bar = setup_gui()
 
 # Start the Tkinter main loop
 window.mainloop()
