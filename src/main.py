@@ -74,7 +74,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            display_message("Skipping duplicatee video", "none")
+            display_message("Skipping duplicate video", "none")
             return
 
         downloaded_titles.add(video_title)
@@ -98,7 +98,7 @@ def download_single_video(
                 display_message("Audio already exists. Skipping", f"{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-            display_message("Downloading viideo", f"{video_title}")
+            display_message("Downloading video", f"{video_title}")
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -201,7 +201,7 @@ def setup_gui():
     progress_label = Label(window, text="Progress: 0.00%")
     progress_label.pack(pady=10)
 
-    # Create a text area for system mesege
+    # Create a text area for system message
     text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20)
     text_area.pack(fill=tk.BOTH, expand=True)
     # Left section for single video download
@@ -290,6 +290,20 @@ def setup_gui():
     if last_directory:
         save_directory_entry.insert(0, last_directory)
         playlist_save_directory_entry.insert(0, last_directory)
+
+    # Function to reset all values
+    def reset_values():
+        link_entry.delete(0, tk.END)
+        playlist_link_entry.delete(0, tk.END)
+        save_directory_entry.delete(0, tk.END)
+        playlist_save_directory_entry.delete(0, tk.END)
+        progress_var.set(0.0)
+        progress_label.config(text="Progress: 0.00%")
+        text_area.config(state=tk.DISABLED)
+
+    # Button to reset values
+    reset_button = Button(window, text="Reset Values", command=reset_values)
+    reset_button.pack()
 
     return window, text_area, progress_var, progress_label, progress_bar
 
