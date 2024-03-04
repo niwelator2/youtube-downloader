@@ -175,23 +175,24 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
+def start_download_playlist_threaded_inner(playlist_link, download_type, save_directory):
+    try:
+        playlist = Playlist(playlist_link)
+        total_videos = len(playlist.video_urls)
+        current_video = 1
 
-def start_download_playlist_threaded_inner(
-    playlist_link, download_type, save_directory
-):
-    playlist = Playlist(playlist_link)
-    total_videos = len(playlist.video_urls)
-    current_video = 1  # Start from 1 for better user experience
-    for video_url in playlist.video_urls:
-        download_single_video_threaded(
-            video_url, download_type, save_directory, current_video
-        )
-        percent_complete = (current_video / total_videos) * 100
-        update_progress_bar(percent_complete, current_video)
-        current_video += 1  # Increment after downloading each video
+        for video_url in playlist.video_urls:
+            download_single_video_threaded(
+                video_url, download_type, save_directory, current_video
+            )
+            percent_complete = (current_video / total_videos) * 100
+            update_progress_bar(percent_complete, current_video)
+            current_video += 1
 
-    display_message("Playlist download completed!")
-
+        display_message("Playlist download completed!")
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 def setup_gui():
     window = tk.Tk()
