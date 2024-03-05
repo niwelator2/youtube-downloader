@@ -14,8 +14,8 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-from plyer import notification
 
+# Parametr to update progress bar
 update_interval = 1
 # Create a queue for message display
 message_queue = queue.Queue()
@@ -26,6 +26,9 @@ def display_message(message, video_title):
 
     # Start a separate thread to handle displaying messages
     threading.Thread(target=display_messages_from_queue).start()
+
+
+# Def that colect all meseges form system and add them in to queue to prevent freezeing app
 
 
 def display_messages_from_queue():
@@ -41,6 +44,9 @@ def display_messages_from_queue():
         message_queue.task_done()
 
 
+# This def tells how much buytes of the song is left to dowloand
+
+
 def on_progress(stream, chunk, bytes_remaining, current_video):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
@@ -52,6 +58,9 @@ def update_progress_bar(percent, current_video):
     progress_bar["value"] = percent
     progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
+
+
+# This def extract from url a name of the song/songs
 
 
 def clean_video_title(title):
@@ -74,7 +83,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            display_message("Skipping duplicatee video", "none")
+            display_message("Skipping duplicate video", "")
             return
 
         downloaded_titles.add(video_title)
@@ -85,7 +94,7 @@ def download_single_video(
                 display_message("Video already exists.", f"{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            display_message("Downloading viideo", f"{video_title}")
+            display_message("Downloading video", f"{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -98,7 +107,7 @@ def download_single_video(
                 display_message("Audio already exists. Skipping", f"{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
-            display_message("Downloading viideo", f"{video_title}")
+            display_message("Downloading video", f"{video_title}")
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -130,7 +139,7 @@ def download_playlist(playlist_link, download_type, save_directory):
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
 
-    display_message("Playlist download completed!", "none")
+    display_message("Playlist download completed!", "")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -177,18 +186,23 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
 def start_download_playlist_threaded_inner(
     playlist_link, download_type, save_directory
 ):
-    playlist = Playlist(playlist_link)
-    total_videos = len(playlist.video_urls)
-    current_video = 1  # Start from 1 for better user experience
-    for video_url in playlist.video_urls:
-        download_single_video_threaded(
-            video_url, download_type, save_directory, current_video
-        )
-        percent_complete = (current_video / total_videos) * 100
-        update_progress_bar(percent_complete, current_video)
-        current_video += 1  # Increment after downloading each video
+    try:
+        playlist = Playlist(playlist_link)
+        total_videos = len(playlist.video_urls)
+        current_video = 1
 
-    display_message("Playlist download completed!")
+        for video_url in playlist.video_urls:
+            download_single_video_threaded(
+                video_url, download_type, save_directory, current_video
+            )
+            percent_complete = (current_video / total_videos) * 100
+            update_progress_bar(percent_complete, current_video)
+            current_video += 1
+
+        display_message("Playlist download completed!", "")
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 
 def setup_gui():
@@ -201,7 +215,7 @@ def setup_gui():
     progress_label = Label(window, text="Progress: 0.00%")
     progress_label.pack(pady=10)
 
-    # Create a text area for system mesege
+    # Create a text area for system message
     text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED, height=3, width=20)
     text_area.pack(fill=tk.BOTH, expand=True)
     # Left section for single video download
@@ -290,6 +304,20 @@ def setup_gui():
     if last_directory:
         save_directory_entry.insert(0, last_directory)
         playlist_save_directory_entry.insert(0, last_directory)
+
+    # Function to reset all values
+    def reset_values():
+        link_entry.delete(0, tk.END)
+        playlist_link_entry.delete(0, tk.END)
+        save_directory_entry.delete(0, tk.END)
+        playlist_save_directory_entry.delete(0, tk.END)
+        progress_var.set(0.0)
+        progress_label.config(text="Progress: 0.00%")
+        text_area.config(state=tk.DISABLED)
+
+    # Button to reset values
+    reset_button = Button(window, text="Reset Values", command=reset_values)
+    reset_button.pack()
 
     return window, text_area, progress_var, progress_label, progress_bar
 
