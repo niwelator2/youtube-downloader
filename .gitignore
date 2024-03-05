@@ -2,3 +2,6 @@ mp3/
 mp4/
 audio/
 venv/
+build/
+dist/
+.last_directory
