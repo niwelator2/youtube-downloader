@@ -4,3 +4,4 @@ audio/
 venv/
 build/
 dist/
+.last_directory
