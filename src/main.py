@@ -14,6 +14,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
+
 # Parametr to update progress bar
 update_interval = 1
 # Create a queue for message display
@@ -26,7 +27,9 @@ def display_message(message, video_title):
     # Start a separate thread to handle displaying messages
     threading.Thread(target=display_messages_from_queue).start()
 
+
 # Def that colect all meseges form system and add them in to queue to prevent freezeing app
+
 
 def display_messages_from_queue():
     while not message_queue.empty():
@@ -40,7 +43,9 @@ def display_messages_from_queue():
         text_area.config(state=tk.DISABLED)
         message_queue.task_done()
 
+
 # This def tells how much buytes of the song is left to dowloand
+
 
 def on_progress(stream, chunk, bytes_remaining, current_video):
     bytes_downloaded = stream.filesize - bytes_remaining
@@ -54,7 +59,9 @@ def update_progress_bar(percent, current_video):
     progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
 
+
 # This def extract from url a name of the song/songs
+
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
@@ -175,7 +182,10 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
-def start_download_playlist_threaded_inner(playlist_link, download_type, save_directory):
+
+def start_download_playlist_threaded_inner(
+    playlist_link, download_type, save_directory
+):
     try:
         playlist = Playlist(playlist_link)
         total_videos = len(playlist.video_urls)
@@ -193,6 +203,7 @@ def start_download_playlist_threaded_inner(playlist_link, download_type, save_di
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
+
 
 def setup_gui():
     window = tk.Tk()
