@@ -76,7 +76,7 @@ def download_single_video(
         )
         video_title = clean_video_title(youtube_object.title)
         if video_title in downloaded_titles:
-            display_message("Skipping duplicate video", "none")
+            display_message("Skipping duplicate video", "")
             return
 
         downloaded_titles.add(video_title)
@@ -87,7 +87,7 @@ def download_single_video(
                 display_message("Video already exists.", f"{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            display_message("Downloading viideo", f"{video_title}")
+            display_message("Downloading video", f"{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -132,7 +132,7 @@ def download_playlist(playlist_link, download_type, save_directory):
         percent_complete = (current_video / total_videos) * 100
         update_progress_bar(percent_complete, current_video)
 
-    display_message("Playlist download completed!", "none")
+    display_message("Playlist download completed!", "")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -189,7 +189,7 @@ def start_download_playlist_threaded_inner(playlist_link, download_type, save_di
             update_progress_bar(percent_complete, current_video)
             current_video += 1
 
-        display_message("Playlist download completed!")
+        display_message("Playlist download completed!", "")
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
