@@ -5,3 +5,4 @@ venv/
 build/
 dist/
 .last_directory
+setup.iss
