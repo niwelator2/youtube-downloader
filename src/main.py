@@ -19,7 +19,7 @@ from tkinter import (
 update_interval = 1
 # Create a queue for message display
 message_queue = queue.Queue()
-
+download_queue = queue.Queue()
 
 def display_message(message, video_title):
     message_queue.put((message, video_title))
@@ -128,19 +128,32 @@ def download_single_video(
         show_error_message(error_message)
 
 
-def download_playlist(playlist_link, download_type, save_directory):
-    current_video = 1
-    playlist = Playlist(playlist_link)
-    total_videos = len(playlist.video_urls)
+def download_playlist_threaded(playlist_link, download_type, save_directory):
+    try:
+        playlist_download_thread = threading.Thread(
+            target=start_download_playlist_threaded_inner,
+            args=(playlist_link, download_type, save_directory),
+        )
+        playlist_download_thread.start()
 
-    for video_url in playlist.video_urls:
-        download_single_video(video_url, download_type, save_directory, current_video)
-        current_video += 1
-        percent_complete = (current_video / total_videos) * 100
-        update_progress_bar(percent_complete, current_video)
+        # Schedule check for updates in GUI from the main thread
+        window.after(1000, check_download_progress, save_directory)
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
-    display_message("Playlist download completed!", "")
+def check_download_progress(save_directory):
+    while True:
+        if os.listdir(save_directory):
+            display_message("Playlist download completed!", "")
+            break
+        else:
+            window.after(1000, check_download_progress, save_directory)
+            return
 
+def add_to_queue(link, download_type, save_directory):
+    download_queue.put((link, download_type, save_directory))
+    display_message("Link add to queue: {link}")
 
 def select_save_directory(entry_widget, initial_dir=None):
     directory = filedialog.askdirectory(initialdir=initial_dir)
@@ -166,6 +179,20 @@ def load_last_directory():
 def download_single_video_threaded(link, download_type, save_directory, current_video):
     try:
         download_single_video(link, download_type, save_directory, current_video, set())
+        if not download_queue.empty():
+            start_next_download_from_queue()
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
+
+
+def start_next_download_from_queue():
+    try:
+        link, download_type, save_directory, current_video = download_queue.get()
+        download_single_video(link, download_type, save_directory, current_video, set())
+        download_queue.task_done()
+        if not download_queue.empty():
+            start_next_download_from_queue()
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
