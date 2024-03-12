@@ -2,6 +2,12 @@ import os
 import threading
 import queue
 from pytube import YouTube, Playlist
+
+import requests
+from bs4 import BeautifulSoup
+from mutagen.easyid3 import EasyID3
+
+
 import tkinter as tk
 from tkinter import (
     ttk,
@@ -15,11 +21,13 @@ from tkinter import (
     messagebox,
 )
 
+
 # Parametr to update progress bar
 update_interval = 1
 # Create a queue for message display
 message_queue = queue.Queue()
 download_queue = queue.Queue()
+
 
 def display_message(message, video_title):
     message_queue.put((message, video_title))
@@ -65,6 +73,33 @@ def update_progress_bar(percent, current_video):
 
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
+
+
+# Def to save metadata to mp3  file
+
+
+def save_data_to_mp3(link, mp3_file_path):
+    try:
+        response = requests.get(link)
+        # Parse the HTML
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Get info from webpage
+        title = soup.find("title").get_text()
+        artist = soup.find("meta", property="og:site_name")["content"]
+
+        # Put metadata into file
+        audio = EasyID3(mp3_file_path)
+        audio["title"] = title
+        audio["artist"] = artist
+
+        audio.save()
+
+        display_message("Metadata saved to mp3 file successfully", "")
+
+    except Exception as e:
+        error_message = f"An error occurred while saving metadata to MP3 file: {str(e)}"
+        show_error_message(error_message)
 
 
 def show_error_message(message):
@@ -113,9 +148,10 @@ def download_single_video(
             )
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
             os.rename(audio_file, new_file)
+            # Save metadata to the downloaded MP3 file
+            save_data_to_mp3(link, new_file)
 
         else:
-            display_message("Invalid download type. Choose 'MP4' or 'MP3'. ", "")
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
@@ -142,6 +178,7 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
+
 def check_download_progress(save_directory):
     while True:
         if os.listdir(save_directory):
@@ -151,9 +188,11 @@ def check_download_progress(save_directory):
             window.after(1000, check_download_progress, save_directory)
             return
 
+
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
     display_message("Link add to queue: {link}")
+
 
 def select_save_directory(entry_widget, initial_dir=None):
     directory = filedialog.askdirectory(initialdir=initial_dir)
