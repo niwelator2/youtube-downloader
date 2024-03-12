@@ -5,8 +5,8 @@ from pytube import YouTube, Playlist
 
 import requests
 from bs4 import BeautifulSoup
-from mutagen.easyid3 import EasyID3
-
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TDRC
 
 import tkinter as tk
 from tkinter import (
@@ -81,26 +81,42 @@ def clean_video_title(title):
 def save_data_to_mp3(link, mp3_file_path):
     try:
         response = requests.get(link)
-        # Parse the HTML
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Get info from webpage
-        title = soup.find("title").get_text()
-        artist = soup.find("meta", property="og:site_name")["content"]
+        # Find tags containing album, artist, and release date information
+        album_tag = soup.find('meta', property='og:album')
+        artist_tag = soup.find('meta', property='og:artist')
+        release_date_tag = soup.find('meta', property='og:release_date')
 
-        # Put metadata into file
-        audio = EasyID3(mp3_file_path)
-        audio["title"] = title
-        audio["artist"] = artist
+        # Extract content from tags if found
+        album = album_tag['content'] if album_tag else None
+        artist = artist_tag['content'] if artist_tag else None
+        release_date = release_date_tag['content'] if release_date_tag else None
 
+        # Load the MP3 file using mutagen
+        audio = MP3(mp3_file_path, ID3=ID3)
+
+        # Create a new ID3 tag if one doesn't exist
+        if not audio.tags:
+            audio.add_tags()
+
+        # Set metadata
+        if album:
+            audio.tags.add(TALB(encoding=3, text=album))
+        if artist:
+            audio.tags.add(TPE1(encoding=3, text=artist))
+        if release_date:
+            audio.tags.add(TDRC(encoding=3, text=release_date))
+
+        # Save the changes to the MP3 file
         audio.save()
 
-        display_message("Metadata saved to mp3 file successfully", "")
+        display_message("Metadata saved to MP3 file successfully", "")
 
     except Exception as e:
         error_message = f"An error occurred while saving metadata to MP3 file: {str(e)}"
-        show_error_message(error_message)
-
+        display_message(error_message,"")
+      #  show_error_message(error_message)
 
 def show_error_message(message):
     messagebox.showerror("Error", message)
