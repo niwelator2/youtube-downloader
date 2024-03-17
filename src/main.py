@@ -1,7 +1,9 @@
 import os
 import threading
 import queue
+import re
 from pytube import YouTube, Playlist
+from googleapiclient.discovery import build
 
 import requests
 from bs4 import BeautifulSoup
@@ -29,14 +31,9 @@ message_queue = queue.Queue()
 download_queue = queue.Queue()
 
 
-def display_message(message, video_title):
+def display_message(message, video_title=None):
     message_queue.put((message, video_title))
-
-    # Start a separate thread to handle displaying messages
-    threading.Thread(target=display_messages_from_queue).start()
-
-
-# Def that colect all meseges form system and add them in to queue to prevent freezeing app
+    display_messages_from_queue()
 
 
 def display_messages_from_queue():
@@ -52,9 +49,7 @@ def display_messages_from_queue():
         message_queue.task_done()
 
 
-# This def tells how much buytes of the song is left to dowloand
-
-
+# This def tells how much bytes of the song is left to download
 def on_progress(stream, chunk, bytes_remaining, current_video):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
@@ -68,30 +63,60 @@ def update_progress_bar(percent, current_video):
     window.update_idletasks()
 
 
-# This def extract from url a name of the song/songs
-
-
 def clean_video_title(title):
     return "".join(c if c.isalnum() or c in [" ", "_", "-"] else "_" for c in title)
 
 
-# Def to save metadata to mp3  file
+def extract_video_id(url):
+    video_id_match = re.search(r"(?<=v=)[\w-]+", url)
+    if video_id_match:
+        return video_id_match.group(0)
+    else:
+        return None
+
+
+def get_video_metadata(api_key, video_url):
+    youtube = build("youtube", "v3", developerKey=api_key)
+    video_id = extract_video_id(video_url)
+    if video_id:
+        request = youtube.videos().list(part="snippet", id=video_id)
+        response = request.execute()
+        if response["items"]:
+            video_info = response["items"][0]["snippet"]
+            title = video_info["title"]
+            description = video_info["description"]
+            upload_date = video_info["publishedAt"]
+            return {
+                "title": title,
+                "description": description,
+                "upload_date": upload_date,
+            }
+    return None
 
 
 def save_data_to_mp3(link, mp3_file_path):
     try:
         response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        api_key = "YOUR_API_KEY"  # Replace with your actual API key
+        metadata = get_video_metadata(api_key, link)
+        if metadata:
+            print("Title:", metadata["title"])
+            print("Description:", metadata["description"])
+            print("Upload Date:", metadata["upload_date"])
+        else:
+            print("Video not found or invalid URL.")
 
         # Find tags containing album, artist, and release date information
-        album_tag = soup.find('meta', property='og:album')
-        artist_tag = soup.find('meta', property='og:artist')
-        release_date_tag = soup.find('meta', property='og:release_date')
+        album_tag = soup.find("meta", property="og:album")
+        artist_tag = soup.find("meta", property="og:artist")
+        release_date_tag = soup.find("meta", property="og:release_date")
 
         # Extract content from tags if found
-        album = album_tag['content'] if album_tag else None
-        artist = artist_tag['content'] if artist_tag else None
-        release_date = release_date_tag['content'] if release_date_tag else None
+        album = album_tag["content"] if album_tag else None
+        artist = artist_tag["content"] if artist_tag else None
+        release_date = release_date_tag["content"] if release_date_tag else None
 
         # Load the MP3 file using mutagen
         audio = MP3(mp3_file_path, ID3=ID3)
@@ -115,8 +140,8 @@ def save_data_to_mp3(link, mp3_file_path):
 
     except Exception as e:
         error_message = f"An error occurred while saving metadata to MP3 file: {str(e)}"
-        display_message(error_message,"")
-      #  show_error_message(error_message)
+        display_message(error_message, "")
+
 
 def show_error_message(message):
     messagebox.showerror("Error", message)
@@ -187,27 +212,36 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
             args=(playlist_link, download_type, save_directory),
         )
         playlist_download_thread.start()
-
-        # Schedule check for updates in GUI from the main thread
-        window.after(1000, check_download_progress, save_directory)
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
 
-def check_download_progress(save_directory):
-    while True:
-        if os.listdir(save_directory):
-            display_message("Playlist download completed!", "")
-            break
-        else:
-            window.after(1000, check_download_progress, save_directory)
-            return
+def start_download_playlist_threaded_inner(
+    playlist_link, download_type, save_directory
+):
+    try:
+        playlist = Playlist(playlist_link)
+        total_videos = len(playlist.video_urls)
+        current_video = 1
+
+        for video_url in playlist.video_urls:
+            download_single_video_threaded(
+                video_url, download_type, save_directory, current_video
+            )
+            percent_complete = (current_video / total_videos) * 100
+            update_progress_bar(percent_complete, current_video)
+            current_video += 1
+
+        display_message("Playlist download completed!", "")
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        show_error_message(error_message)
 
 
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
-    display_message("Link add to queue: {link}")
+    display_message(f"Link added to queue: {link}")
 
 
 def select_save_directory(entry_widget, initial_dir=None):
@@ -248,40 +282,6 @@ def start_next_download_from_queue():
         download_queue.task_done()
         if not download_queue.empty():
             start_next_download_from_queue()
-    except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        show_error_message(error_message)
-
-
-def download_playlist_threaded(playlist_link, download_type, save_directory):
-    try:
-        playlist_download_thread = threading.Thread(
-            target=start_download_playlist_threaded_inner,
-            args=(playlist_link, download_type, save_directory),
-        )
-        playlist_download_thread.start()
-    except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        show_error_message(error_message)
-
-
-def start_download_playlist_threaded_inner(
-    playlist_link, download_type, save_directory
-):
-    try:
-        playlist = Playlist(playlist_link)
-        total_videos = len(playlist.video_urls)
-        current_video = 1
-
-        for video_url in playlist.video_urls:
-            download_single_video_threaded(
-                video_url, download_type, save_directory, current_video
-            )
-            percent_complete = (current_video / total_videos) * 100
-            update_progress_bar(percent_complete, current_video)
-            current_video += 1
-
-        display_message("Playlist download completed!", "")
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
