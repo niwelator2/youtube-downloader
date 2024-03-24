@@ -66,6 +66,22 @@ def show_error_message(message):
 def download_single_video(
     link, download_type, save_directory, current_video, downloaded_titles
 ):
+    """
+    Downloads a single video from a given link based on the specified download type.
+
+    Parameters:
+        link (str): The link to the video.
+        download_type (str): The type of download to perform. Valid options are "MP4" or "MP3".
+        save_directory (str): The directory where the downloaded video or audio file will be saved.
+        current_video (int): The index of the current video in the list of videos to download.
+        downloaded_titles (set): A set of titles of videos that have already been downloaded.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: If an error occurs during the download process.
+    """
     try:
         youtube_object = YouTube(
             link,
@@ -76,11 +92,11 @@ def download_single_video(
         video_title = clean_video_title(youtube_object.title)
 
         if youtube_object.age_restricted:
-            display_message("This video is age-restricted. Skipping.", "")
+            display_message(f"This video is age-restricted. Skipping.", "")
             return
 
         if video_title in downloaded_titles:
-            display_message("Skipping duplicate video", "")
+            display_message(f"Skipping duplicate video", "")
             return
 
         downloaded_titles.add(video_title)
@@ -88,10 +104,10 @@ def download_single_video(
         if download_type == "MP4":
             video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
             if os.path.exists(video_file_path):
-                display_message("Video already exists.", f"{video_title}")
+                display_message(f"Video already exists.", f"{video_title}")
                 return
             stream = youtube_object.streams.get_highest_resolution()
-            display_message("Downloading video", f"{video_title}")
+            display_message(f"Downloading video", f"{video_title}")
             video_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -101,7 +117,7 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                display_message("Audio already exists. Skipping", f"{video_title}")
+                display_message(f"Audio already exists. Skipping", f"{video_title}")
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             display_message("Downloading video", f"{video_title}")
@@ -112,12 +128,12 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
         else:
-            display_message("Invalid download type. Choose 'MP4' or 'MP3'. ", "")
+            display_message(f"Invalid download type. Choose 'MP4' or 'MP3'. ", "")
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
 
-        display_message("Download completed!", "")
+        display_message(f"Download completed!", "")
         update_progress_bar(100, current_video)
 
     except Exception as e:
@@ -126,6 +142,15 @@ def download_single_video(
 
 
 def download_playlist_threaded(playlist_link, download_type, save_directory):
+    """
+    Downloads a playlist in a separate thread using the given playlist link, download type, and save directory.
+    Parameters:
+        playlist_link (str): The link to the playlist to be downloaded.
+        download_type (str): The type of download to be performed.
+        save_directory (str): The directory where the downloaded playlist will be saved.
+    Returns:
+        None
+    """
     try:
         playlist_download_thread = threading.Thread(
             target=start_download_playlist_threaded_inner,
@@ -142,7 +167,7 @@ def download_playlist_threaded(playlist_link, download_type, save_directory):
 
 def check_download_progress(save_directory):
     if os.listdir(save_directory):
-        display_message("Playlist download completed!", "")
+        display_message(f"Start downloading playlist!", "")
     else:
         # Schedule another check after 1 second
         window.after(1000, lambda: check_download_progress(save_directory))
@@ -185,6 +210,9 @@ def download_single_video_threaded(link, download_type, save_directory, current_
 
 
 def start_next_download_from_queue():
+    """
+    Function to start the next download from the queue.
+    """
     try:
         link, download_type, save_directory, current_video = download_queue.get()
         download_single_video(link, download_type, save_directory, current_video, set())
@@ -199,6 +227,17 @@ def start_next_download_from_queue():
 def start_download_playlist_threaded_inner(
     playlist_link, download_type, save_directory
 ):
+    """
+    A function that starts downloading videos from a playlist in a threaded manner.
+
+    Args:
+        playlist_link (str): The link to the playlist.
+        download_type (str): The type of download (e.g., audio, video).
+        save_directory (str): The directory where the downloaded files will be saved.
+
+    Returns:
+        None
+    """
     try:
         playlist = Playlist(playlist_link)
         total_videos = len(playlist.video_urls)
@@ -212,16 +251,21 @@ def start_download_playlist_threaded_inner(
             update_progress_bar(percent_complete, current_video)
             current_video += 1
 
-        display_message("Playlist download completed!", "")
+        display_message(f"Playlist download completed!", "")
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
 
 def setup_gui():
+    """
+    This function sets up the GUI for the YouTube Downloader application.
+    It creates a window with a title and geometry, creates labels, text areas, frames, buttons, option menus, and progress bars for single video and playlist download.
+    It also loads the last directory, provides a function to reset values, and returns several GUI elements.
+    """
     window = tk.Tk()
     window.title("YouTube Downloader")
-    window.geometry("800x300")
+    window.geometry("800x320")
 
     # Create a Label to display progress
     progress_var = DoubleVar()
@@ -263,7 +307,7 @@ def setup_gui():
             link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
         ),
     )
-    download_button.pack()
+    download_button.pack(pady=10)
 
     # Right section for playlist download
     right_frame = ttk.Frame(window)
@@ -303,7 +347,7 @@ def setup_gui():
             playlist_save_directory_entry.get(),
         ),
     )
-    download_button2.pack()
+    download_button2.pack(pady=10)
 
     # Progress bar
     progress_bar = ttk.Progressbar(
