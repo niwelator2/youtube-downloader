@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Youtube-downloader"
-#define MyAppVersion "2.1"
+#define MyAppVersion "2.3"
 #define MyAppPublisher "niwelator2"
 #define MyAppURL "https://gitlab.com/niwelator2/youtube-downloader"
 #define MyAppExeName "Youtube-Downloader.exe"
@@ -24,7 +24,7 @@ LicenseFile=C:\Users\Filip\Documents\youtube-downloader\license.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\Filip\Documents\youtube-downloader\windows
-OutputBaseFilename=Youtube-Downloader.2.0_setup
+OutputBaseFilename=Youtube-Downloader.2.3_setup
 SetupIconFile=C:\Users\Filip\Documents\youtube-downloader\src\logo.ico
 Compression=lzma
 SolidCompression=yes
