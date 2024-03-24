@@ -18,7 +18,6 @@ from tkinter import (
 # Parametr to update progress bar
 update_interval = 1
 # Create a queue for message display
-# Create a queue for message display
 message_queue = queue.Queue()
 download_queue = queue.Queue()
 
@@ -75,6 +74,11 @@ def download_single_video(
             ),
         )
         video_title = clean_video_title(youtube_object.title)
+
+        if youtube_object.age_restricted:
+            display_message("This video is age-restricted. Skipping.", "")
+            return
+
         if video_title in downloaded_titles:
             display_message("Skipping duplicate video", "")
             return
