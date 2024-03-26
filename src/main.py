@@ -309,7 +309,25 @@ def setup_gui():
             link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
         ),
     )
-    download_button.pack(pady=10)
+    download_button.pack(pady=1)
+
+    def open_directory():
+        directory = save_directory_entry.get()
+        if os.path.exists(directory):
+            os.startfile(directory)
+        else:
+            show_error_message(f"Directory not found: {directory}")
+
+    ###############################################
+    # Button to open directory where file is saved#
+    ###############################################
+
+    directory_button = Button(
+        left_frame,
+        text="Open Directory",
+        command=lambda: open_directory(),
+    )
+    directory_button.pack(pady=2)
 
     # Right section for playlist download
     right_frame = ttk.Frame(window)
@@ -349,7 +367,24 @@ def setup_gui():
             playlist_save_directory_entry.get(),
         ),
     )
-    download_button2.pack(pady=10)
+    download_button2.pack(pady=1)
+
+    ###############################################
+    # Button to open directory where file is saved#
+    ###############################################
+    def open_playlist_directory():
+        directory = playlist_save_directory_entry.get()
+        if os.path.exists(directory):
+            os.startfile(directory)
+        else:
+            show_error_message(f"Directory not found: {directory}")
+
+    playlist_directory_button = Button(
+        right_frame,
+        text="Open Playlist Directory",
+        command=open_playlist_directory,
+    )
+    playlist_directory_button.pack(pady=2)
 
     # Progress bar
     progress_bar = ttk.Progressbar(

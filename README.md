@@ -27,39 +27,37 @@ YouTube Downloader is a simple Python application that allows users to download 
 - [pywin32-ctypes](https://pypi.org/project/pywin32-ctypes/) (0.2.2): A Python package that provides access to many of the Windows APIs from Python through ctypes.
 - [setuptools](https://pypi.org/project/setuptools/) (69.1.1): A package development process library designed to facilitate packaging Python projects.
 
-
-
 ## Installation
 
-   ```bash
-   git clone https://github.com/yourusername/youtube-downloader.git
-   cd youtube-downloader
-   cd windows/
-   ./Youtube-Downloader.2.0_windows_x64_setup.exe
-   ```
-      
+```bash
+git clone https://github.com/yourusername/youtube-downloader.git
+cd youtube-downloader
+cd windows/
+./Youtube-Downloader.2.0_windows_x64_setup.exe
+```
+
 ## Build without console window
 
-   ```bash
-    python -m venv venv
-    pip install -r requirements.txt
-    cd src/
-    pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py
-   ``` 
+```bash
+ python -m venv venv
+ pip install -r requirements.txt
+ cd src/
+ pyinstaller --onefile --distpath=../windows --icon=../src/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py
+```
+
 ## Build with console window
 
-   ```bash
-       pyinstaller --onefile --distpath=../windows --icon=logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. main.py
-   ```
+```bash
+    pyinstaller --onefile --distpath=../windows --icon=../src/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. main.py
+```
 
 ## Credits
- 
+
 Author - FilipP (@niwelator2)
 Reporter - Veridicus (@kkwestarz002)
 
-
 ## License
- 
+
 MIT License
 
 Copyright (c) [2024] [niwelator2]
