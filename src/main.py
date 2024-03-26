@@ -268,11 +268,18 @@ def setup_gui():
     window.title("YouTube Downloader")
     window.geometry("800x320")
 
-    # Load the icon image
-    #icon = tk.PhotoImage(file="../logo.ico")
+    # Specify the file path to your icon
+    icon_file_path = "logo.png"
 
-    # Set the icon for the window
-    # window.iconphoto(True, icon)
+    try:
+        # Load the icon image
+        icon_image = tk.PhotoImage(file=icon_file_path)
+
+        # Set the icon for the window
+        window.iconphoto(True, icon_image)
+    except tk.TclError as e:
+        # Print error message if the file cannot be loaded
+        show_error_message(e)
 
     # Create a Label to display progress
     progress_var = DoubleVar()
