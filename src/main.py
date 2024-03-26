@@ -4,6 +4,7 @@ import queue
 from pytube import YouTube, Playlist
 import tkinter as tk
 from tkinter import (
+    PhotoImage,
     ttk,
     Label,
     Entry,
@@ -266,6 +267,12 @@ def setup_gui():
     window = tk.Tk()
     window.title("YouTube Downloader")
     window.geometry("800x320")
+
+    # Load the icon image
+    #icon = tk.PhotoImage(file="../logo.ico")
+
+    # Set the icon for the window
+    # window.iconphoto(True, icon)
 
     # Create a Label to display progress
     progress_var = DoubleVar()
