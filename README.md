@@ -8,6 +8,8 @@ YouTube Downloader is a simple Python application that allows users to download 
 - Download entire YouTube playlists by providing the playlist URL.
 - Choose between downloading videos as MP4 or extracting audio as MP3.
 - Select the save directory for downloaded files.
+- Open an directory  containing downloaded files.
+
 
 ## Dependencies
 
@@ -33,7 +35,7 @@ YouTube Downloader is a simple Python application that allows users to download 
 git clone https://github.com/yourusername/youtube-downloader.git
 cd youtube-downloader
 cd windows/
-./Youtube-Downloader.2.0_windows_x64_setup.exe
+./Youtube-Downloader.2.3.setup.exe
 ```
 
 ## Build without console window
