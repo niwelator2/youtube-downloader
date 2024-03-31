@@ -13,21 +13,9 @@ YouTube Downloader is a simple Python application that allows users to download 
 
 ## Dependencies
 
-- [altgraph](https://pypi.org/project/altgraph/) (0.17.4): A Python graph (network) package that handles graph creation, manipulation, and layout.
-- [black](https://pypi.org/project/black/) (24.2.0): An uncompromising Python code formatter that automatically formats your code to ensure consistency.
-- [click](https://pypi.org/project/click/) (8.1.7): A Python package for creating command-line interfaces (CLIs) with ease.
-- [colorama](https://pypi.org/project/colorama/) (0.4.6): A simple Python package that makes it easy to work with ANSI escape codes to colorize terminal text.
-- [mypy-extensions](https://pypi.org/project/mypy-extensions/) (1.0.0): Additional extensions for the MyPy static type checker for Python.
-- [packaging](https://pypi.org/project/packaging/) (23.2): A core utility for Python packaging and distribution.
-- [pathspec](https://pypi.org/project/pathspec/) (0.12.1): A Python library for matching files using shell-like glob patterns.
-- [pefile](https://pypi.org/project/pefile/) (2023.2.7): A Python module to read and work with Portable Executable (PE) files.
-- [platformdirs](https://pypi.org/project/platformdirs/) (4.2.0): A Python library for accessing platform-specific directories for data, cache, and config files.
-- [plyer](https://pypi.org/project/plyer/) (2.1.0): A platform-independent Python library for accessing features commonly found on various platforms, including notifications.
-- [pyinstaller](https://pypi.org/project/pyinstaller/) (6.4.0): A Python package that converts Python scripts into standalone executables, under Windows, Linux, and macOS.
-- [pyinstaller-hooks-contrib](https://pypi.org/project/pyinstaller-hooks-contrib/) (2024.1): A collection of hooks for PyInstaller to bundle additional non-Python files.
-- [pytube](https://pypi.org/project/pytube/) (15.0.0): A lightweight, dependency-free Python library to fetch YouTube content.
-- [pywin32-ctypes](https://pypi.org/project/pywin32-ctypes/) (0.2.2): A Python package that provides access to many of the Windows APIs from Python through ctypes.
-- [setuptools](https://pypi.org/project/setuptools/) (69.1.1): A package development process library designed to facilitate packaging Python projects.
+/*
+ TODO: ADD new 
+*/
 
 ## Installation
 
