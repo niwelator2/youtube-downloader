@@ -7,5 +7,3 @@ dist/
 .last_directory
 setup.iss
 __pycache__
-test
-unitytest
