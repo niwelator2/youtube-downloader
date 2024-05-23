@@ -14,13 +14,12 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-from download import download_playlist_threaded, download_single_video_threaded
+from download.download import download_playlist_threaded, download_single_video
 from utils.utils import (
     select_save_directory,
     load_last_directory,
     show_error_message,
 )
-
 
 def setup_gui():
     """
@@ -69,8 +68,8 @@ def setup_gui():
     download_button = Button(
         left_frame,
         text="Download Single Video",
-        command=lambda: download_single_video_threaded(
-            link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1
+        command=lambda: download_single_video(
+            link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1, set(), text_area, progress_var, progress_bar, progress_label
         ),
     )
     download_button.pack(pady=1)
@@ -129,6 +128,7 @@ def setup_gui():
             playlist_link_entry.get(),
             download_type_playlist_var.get(),
             playlist_save_directory_entry.get(),
+            text_area, progress_var, progress_label, progress_bar
         ),
     )
     download_button2.pack(pady=1)
@@ -176,4 +176,3 @@ def setup_gui():
     reset_button.pack()
 
     return window, text_area, progress_var, progress_label, progress_bar
-
