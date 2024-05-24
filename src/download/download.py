@@ -1,7 +1,7 @@
 import os
 import threading
 import queue
-from pytube import YouTube, Playlist # type: ignore
+from pytube import YouTube, Playlist
 from utils.utils import show_error_message, clean_video_title
 import tkinter as tk
 
@@ -112,7 +112,7 @@ def download_playlist_threaded(playlist_link, download_type, save_directory, tex
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
-def check_download_progress(save_directory, text_area):
+def check_download_progress(save_directory, text_area, window):
     if os.listdir(save_directory):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
@@ -120,24 +120,15 @@ def check_download_progress(save_directory, text_area):
 
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
-    display_message(f"Link add to queue: {link}", "")
+    display_message(f"Link added to queue: {link}", "")
 
 def download_single_video_threaded(link, download_type, save_directory, current_video, text_area, progress_var, progress_bar, progress_label, window):
     try:
-        download_single_video(link, download_type, save_directory, current_video, set(), text_area, progress_var, progress_bar, progress_label, window)
-        if not download_queue.empty():
-            start_next_download_from_queue()
-    except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        show_error_message(error_message)
-
-def start_next_download_from_queue():
-    try:
-        link, download_type, save_directory, current_video = download_queue.get()
-        download_single_video(link, download_type, save_directory, current_video, set())
-        download_queue.task_done()
-        if not download_queue.empty():
-            start_next_download_from_queue()
+        download_thread = threading.Thread(
+            target=download_single_video,
+            args=(link, download_type, save_directory, current_video, set(), text_area, progress_var, progress_bar, progress_label, window),
+        )
+        download_thread.start()
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)

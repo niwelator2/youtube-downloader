@@ -1,5 +1,6 @@
 import tkinter as tk
 from gui import setup_gui
+import threading
 
 def main():
     try:
