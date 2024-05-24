@@ -1,9 +1,5 @@
-# main.py
-
 import tkinter as tk
-from gui.gui import setup_gui
-from download import download_single_video_threaded, download_playlist_threaded
-from utils.utils import load_last_directory
+from gui import setup_gui
 
 def main():
     try:

@@ -1,36 +1,18 @@
-# gui.py
-
 import os
 import tkinter as tk
-from tkinter import (
-    PhotoImage,
-    ttk,
-    Label,
-    Entry,
-    Button,
-    OptionMenu,
-    StringVar,
-    DoubleVar,
-    filedialog,
-    messagebox,
-)
-from download.download import download_playlist_threaded, download_single_video
-from utils.utils import (
-    select_save_directory,
-    load_last_directory,
-    show_error_message,
-)
+from tkinter import PhotoImage, ttk, Label, Entry, Button, OptionMenu, StringVar, DoubleVar, filedialog, messagebox
+from download import download_single_video_threaded, download_playlist_threaded
+from utils.utils import select_save_directory, load_last_directory, show_error_message
 
 def setup_gui():
-    """
-    This function sets up the GUI for the YouTube Downloader application.
-    It creates a window with a title and geometry, creates labels, text areas, frames, buttons, option menus, and progress bars for single video and playlist download.
-    It also loads the last directory, provides a function to reset values, and returns several GUI elements.
-    """
     window = tk.Tk()
     window.title("YouTube Downloader")
     window.geometry("800x320")
-    window.iconbitmap("../src/icon/logo.ico")
+    
+    # Construct the absolute path to the icon file
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(script_dir, "icon", "logo.ico")
+    window.iconbitmap(icon_path)
 
     # Create a Label to display progress
     progress_var = DoubleVar()
@@ -68,8 +50,8 @@ def setup_gui():
     download_button = Button(
         left_frame,
         text="Download Single Video",
-        command=lambda: download_single_video(
-            link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1, set(), text_area, progress_var, progress_bar, progress_label
+        command=lambda: download_single_video_threaded(
+            link_entry.get(), download_type_var.get(), save_directory_entry.get(), 1, text_area, progress_var, progress_bar, progress_label, window
         ),
     )
     download_button.pack(pady=1)
@@ -80,10 +62,6 @@ def setup_gui():
             os.startfile(directory)
         else:
             show_error_message(f"Directory not found: {directory}")
-
-    ###############################################
-    # Button to open directory where file is saved#
-    ###############################################
 
     directory_button = Button(
         left_frame,
@@ -128,14 +106,11 @@ def setup_gui():
             playlist_link_entry.get(),
             download_type_playlist_var.get(),
             playlist_save_directory_entry.get(),
-            text_area, progress_var, progress_label, progress_bar
+            text_area, progress_var, progress_label, progress_bar, window
         ),
     )
     download_button2.pack(pady=1)
 
-    ###############################################
-    # Button to open directory where file is saved#
-    ###############################################
     def open_playlist_directory():
         directory = playlist_save_directory_entry.get()
         if os.path.exists(directory):
@@ -161,7 +136,6 @@ def setup_gui():
         save_directory_entry.insert(0, last_directory)
         playlist_save_directory_entry.insert(0, last_directory)
 
-    # Function to reset all values
     def reset_values():
         link_entry.delete(0, tk.END)
         playlist_link_entry.delete(0, tk.END)
@@ -171,7 +145,6 @@ def setup_gui():
         progress_label.config(text="Progress: 0.00%")
         text_area.config(state=tk.DISABLED)
 
-    # Button to reset values
     reset_button = Button(window, text="Reset Values", command=reset_values)
     reset_button.pack()
 
