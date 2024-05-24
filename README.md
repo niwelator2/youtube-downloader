@@ -44,7 +44,7 @@ cd windows/
 ## Credits
 
 Author - FilipP (@niwelator2)
-Reporter - Veridicus (@kkwestarz002)
+
 
 ## License
 
