@@ -28,3 +28,4 @@ def show_error_message(message):
 def clean_video_title(title):
     # Remove invalid characters for file names and trim spaces
     return re.sub(r'[<>:"/\\|?*]', '', title).strip()
+
