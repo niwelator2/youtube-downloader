@@ -2,6 +2,7 @@ import tkinter as tk
 from gui import setup_gui
 import threading
 
+
 def main():
     try:
         # Set up GUI
@@ -11,6 +12,7 @@ def main():
         window.mainloop()
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()

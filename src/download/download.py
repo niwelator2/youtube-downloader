@@ -11,9 +11,11 @@ update_interval = 1
 message_queue = queue.Queue()
 download_queue = queue.Queue()
 
+
 def display_message(message, video_title, text_area):
     message_queue.put((message, video_title))
     threading.Thread(target=display_messages_from_queue, args=(text_area,)).start()
+
 
 def display_messages_from_queue(text_area):
     while not message_queue.empty():
@@ -27,25 +29,57 @@ def display_messages_from_queue(text_area):
         text_area.config(state=tk.DISABLED)
         message_queue.task_done()
 
-def on_progress(stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window):
+
+def on_progress(
+    stream,
+    chunk,
+    bytes_remaining,
+    current_video,
+    progress_var,
+    progress_bar,
+    progress_label,
+    window,
+):
     bytes_downloaded = stream.filesize - bytes_remaining
     percent = (bytes_downloaded / stream.filesize) * 100
-    update_progress_bar(percent, current_video, progress_var, progress_bar, progress_label, window)
+    update_progress_bar(
+        percent, current_video, progress_var, progress_bar, progress_label, window
+    )
 
-def update_progress_bar(percent, current_video, progress_var, progress_bar, progress_label, window):
+
+def update_progress_bar(
+    percent, current_video, progress_var, progress_bar, progress_label, window
+):
     progress_var.set(percent)
     progress_bar["value"] = percent
     progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
 
+
 def download_single_video(
-    link, download_type, save_directory, current_video, downloaded_titles, text_area, progress_var, progress_bar, progress_label, window
+    link,
+    download_type,
+    save_directory,
+    current_video,
+    downloaded_titles,
+    text_area,
+    progress_var,
+    progress_bar,
+    progress_label,
+    window,
 ):
     try:
         youtube_object = YouTube(
             link,
             on_progress_callback=lambda stream, chunk, bytes_remaining: on_progress(
-                stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window
+                stream,
+                chunk,
+                bytes_remaining,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
             ),
         )
         video_title = clean_video_title(youtube_object.title)
@@ -76,7 +110,9 @@ def download_single_video(
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
-                display_message(f"Audio already exists. Skipping", f"{video_title}", text_area)
+                display_message(
+                    f"Audio already exists. Skipping", f"{video_title}", text_area
+                )
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             display_message("Downloading video", f"{video_title}", text_area)
@@ -87,23 +123,46 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
         else:
-            display_message(f"Invalid download type. Choose 'MP4' or 'MP3'. ", "", text_area)
+            display_message(
+                f"Invalid download type. Choose 'MP4' or 'MP3'. ", "", text_area
+            )
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
 
         display_message(f"Download completed!", f"{video_title}", text_area)
-        update_progress_bar(100, current_video, progress_var, progress_bar, progress_label, window)
+        update_progress_bar(
+            100, current_video, progress_var, progress_bar, progress_label, window
+        )
 
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
-def download_playlist_threaded(playlist_link, download_type, save_directory, text_area, progress_var, progress_label, progress_bar, window):
+
+def download_playlist_threaded(
+    playlist_link,
+    download_type,
+    save_directory,
+    text_area,
+    progress_var,
+    progress_label,
+    progress_bar,
+    window,
+):
     try:
         playlist_download_thread = threading.Thread(
             target=start_download_playlist_threaded_inner,
-            args=(playlist_link, download_type, save_directory, text_area, progress_var, progress_label, progress_bar, window),
+            args=(
+                playlist_link,
+                download_type,
+                save_directory,
+                text_area,
+                progress_var,
+                progress_label,
+                progress_bar,
+                window,
+            ),
         )
         playlist_download_thread.start()
 
@@ -112,28 +171,62 @@ def download_playlist_threaded(playlist_link, download_type, save_directory, tex
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
+
 def check_download_progress(save_directory, text_area, window):
     if os.listdir(save_directory):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
         window.after(1000, lambda: check_download_progress(save_directory, text_area))
 
+
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
     display_message(f"Link added to queue: {link}", "")
 
-def download_single_video_threaded(link, download_type, save_directory, current_video, text_area, progress_var, progress_bar, progress_label, window):
+
+def download_single_video_threaded(
+    link,
+    download_type,
+    save_directory,
+    current_video,
+    text_area,
+    progress_var,
+    progress_bar,
+    progress_label,
+    window,
+):
     try:
         download_thread = threading.Thread(
             target=download_single_video,
-            args=(link, download_type, save_directory, current_video, set(), text_area, progress_var, progress_bar, progress_label, window),
+            args=(
+                link,
+                download_type,
+                save_directory,
+                current_video,
+                set(),
+                text_area,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            ),
         )
         download_thread.start()
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
-def start_download_playlist_threaded_inner(playlist_link, download_type, save_directory, text_area, progress_var, progress_label, progress_bar, window):
+
+def start_download_playlist_threaded_inner(
+    playlist_link,
+    download_type,
+    save_directory,
+    text_area,
+    progress_var,
+    progress_label,
+    progress_bar,
+    window,
+):
     try:
         playlist = Playlist(playlist_link)
         total_videos = len(playlist.video_urls)
@@ -141,10 +234,25 @@ def start_download_playlist_threaded_inner(playlist_link, download_type, save_di
 
         for video_url in playlist.video_urls:
             download_single_video_threaded(
-                video_url, download_type, save_directory, current_video, text_area, progress_var, progress_bar, progress_label, window
+                video_url,
+                download_type,
+                save_directory,
+                current_video,
+                text_area,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
             )
             percent_complete = (current_video / total_videos) * 100
-            update_progress_bar(percent_complete, current_video, progress_var, progress_bar, progress_label, window)
+            update_progress_bar(
+                percent_complete,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            )
             current_video += 1
 
         display_message(f"Playlist download completed!", "", text_area)
