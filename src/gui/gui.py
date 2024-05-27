@@ -6,7 +6,7 @@ from utils.utils import select_save_directory, load_last_directory, show_error_m
 
 def setup_gui():
     window = tk.Tk()
-    window.title("YouTube Downloader version.2.3")
+    window.title("YouTube Downloader v2.3")
     window.geometry("800x320")
     
     # Construct the absolute path to the icon file
