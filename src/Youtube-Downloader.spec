@@ -5,13 +5,14 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('gui/', 'gui'), ('utils/', 'utils'), ('download/', 'download')],
     hiddenimports=[],
     hookspath=['.'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
+    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -34,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['..\\src\\icon\\logo.ico'],
+    icon=['..\\src\\gui\\icon\\logo.ico'],
 )
