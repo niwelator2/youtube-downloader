@@ -10,7 +10,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{7203776C-FF1C-414E-86C4-A14E83C4873E}
+AppId={{7203776C-FF1C-414E-86C4-A14E83C4873E}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -21,11 +21,11 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=C:\Users\Pilif\Documents\youtube-downloader\license.txt
-; Uncomment the following line to run in non administrative install mode (install for current user only.)
+; Uncomment the following line to run in non-administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\Pilif\Documents\youtube-downloader\windows
 OutputBaseFilename=Youtube-Downloader.2.3_setup
-SetupIconFile=C:\Users\Pilif\Documents\youtube-downloader\src\icon\logo.ico
+SetupIconFile=src\icon\logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -40,6 +40,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "C:\Users\Pilif\Documents\youtube-downloader\windows\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Pilif\Documents\youtube-downloader\venv\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Pilif\Documents\youtube-downloader\src\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Pilif\Documents\youtube-downloader\src\icon\*"; DestDir: "{app}\src\icon"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -48,4 +49,3 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-
