@@ -92,7 +92,7 @@ def download_single_video(
             show_error_message(error_message)
             return
 
-        display_message(f"Download completed!", "", text_area)
+        display_message(f"Download completed!", f"{video_title}", text_area)
         update_progress_bar(100, current_video, progress_var, progress_bar, progress_label, window)
 
     except Exception as e:
