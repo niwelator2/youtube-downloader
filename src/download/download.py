@@ -68,6 +68,26 @@ def download_single_video(
     progress_label,
     window,
 ):
+
+    #TODO Meta data from video and save it to the file example: 
+
+
+# Function Takes YouTube Object as Argument.
+#def video_Info(yt):
+#    print("Title : ",yt.title)
+#    print("Total Length : ",yt.length," Seconds")
+#   print("Total Views : ",yt.views)
+#    print("Is Age Restricted : ",yt.age_restricted)
+#    print("Video Rating ",round(yt.rating))
+#    print("Thumbnail Url : ",yt.thumbnail_url)
+    
+#link = "YouTube Video URL "
+#yt = YouTube(link) # Create Youtube Object..
+
+# call the function
+#video_info(yt)
+
+
     try:
         youtube_object = YouTube(
             link,
