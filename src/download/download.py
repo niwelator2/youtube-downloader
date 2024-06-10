@@ -11,11 +11,9 @@ update_interval = 1
 message_queue = queue.Queue()
 download_queue = queue.Queue()
 
-
 def display_message(message, video_title, text_area):
     message_queue.put((message, video_title))
     threading.Thread(target=display_messages_from_queue, args=(text_area,)).start()
-
 
 def display_messages_from_queue(text_area):
     while not message_queue.empty():
@@ -28,7 +26,6 @@ def display_messages_from_queue(text_area):
         text_area.see(tk.END)
         text_area.config(state=tk.DISABLED)
         message_queue.task_done()
-
 
 def on_progress(
     stream,
@@ -46,7 +43,6 @@ def on_progress(
         percent, current_video, progress_var, progress_bar, progress_label, window
     )
 
-
 def update_progress_bar(
     percent, current_video, progress_var, progress_bar, progress_label, window
 ):
@@ -55,7 +51,6 @@ def update_progress_bar(
     progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
 
-
 def extract_metadata(youtube_object):
     metadata = {
         "Title": youtube_object.title,
@@ -63,17 +58,17 @@ def extract_metadata(youtube_object):
         "Views": youtube_object.views,
         "Age Restricted": youtube_object.age_restricted,
         "Rating": round(youtube_object.rating, 2) if youtube_object.rating else None,
-        "Thumbnail URL": youtube_object.thumbnail_url,
+        "Description": youtube_object.description,
+        "Publish Date": youtube_object.publish_date,
+        "Author": youtube_object.author,
     }
     return metadata
-
 
 def save_metadata_to_file(metadata, save_directory, video_title):
     metadata_file_path = os.path.join(save_directory, f"{video_title}_metadata.txt")
     with open(metadata_file_path, 'w') as f:
         for key, value in metadata.items():
             f.write(f"{key}: {value}\n")
-
 
 def download_single_video(
     link,
@@ -126,6 +121,10 @@ def download_single_video(
             new_file = os.path.join(save_directory, f"{video_title}.mp4")
             os.rename(video_file, new_file)
 
+            # Save metadata for MP4
+            metadata = extract_metadata(youtube_object)
+            save_metadata_to_file(metadata, save_directory, video_title)
+
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
             if os.path.exists(audio_file_path):
@@ -141,6 +140,10 @@ def download_single_video(
             new_file = os.path.join(save_directory, f"{video_title}.mp3")
             os.rename(audio_file, new_file)
 
+            # Save metadata for MP3
+            metadata = extract_metadata(youtube_object)
+            save_metadata_to_file(metadata, save_directory, video_title)
+
         else:
             display_message(
                 f"Invalid download type. Choose 'MP4' or 'MP3'. ", "", text_area
@@ -148,10 +151,6 @@ def download_single_video(
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
-
-        # Save metadata
-        metadata = extract_metadata(youtube_object)
-        save_metadata_to_file(metadata, save_directory, video_title)
 
         display_message(f"Download completed!", f"{video_title}", text_area)
         update_progress_bar(
@@ -161,7 +160,6 @@ def download_single_video(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
-
 
 def download_playlist_threaded(
     playlist_link,
@@ -194,18 +192,15 @@ def download_playlist_threaded(
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
-
 def check_download_progress(save_directory, text_area, window):
     if os.listdir(save_directory):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
         window.after(1000, lambda: check_download_progress(save_directory, text_area))
 
-
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
     display_message(f"Link added to queue: {link}", "")
-
 
 def download_single_video_threaded(
     link,
@@ -238,7 +233,6 @@ def download_single_video_threaded(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
-
 
 def start_download_playlist_threaded_inner(
     playlist_link,
