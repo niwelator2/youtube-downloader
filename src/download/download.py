@@ -56,6 +56,25 @@ def update_progress_bar(
     window.update_idletasks()
 
 
+def extract_metadata(youtube_object):
+    metadata = {
+        "Title": youtube_object.title,
+        "Length (seconds)": youtube_object.length,
+        "Views": youtube_object.views,
+        "Age Restricted": youtube_object.age_restricted,
+        "Rating": round(youtube_object.rating, 2) if youtube_object.rating else None,
+        "Thumbnail URL": youtube_object.thumbnail_url,
+    }
+    return metadata
+
+
+def save_metadata_to_file(metadata, save_directory, video_title):
+    metadata_file_path = os.path.join(save_directory, f"{video_title}_metadata.txt")
+    with open(metadata_file_path, 'w') as f:
+        for key, value in metadata.items():
+            f.write(f"{key}: {value}\n")
+
+
 def download_single_video(
     link,
     download_type,
@@ -68,26 +87,6 @@ def download_single_video(
     progress_label,
     window,
 ):
-
-    #TODO Meta data from video and save it to the file example: 
-
-
-# Function Takes YouTube Object as Argument.
-#def video_Info(yt):
-#    print("Title : ",yt.title)
-#    print("Total Length : ",yt.length," Seconds")
-#   print("Total Views : ",yt.views)
-#    print("Is Age Restricted : ",yt.age_restricted)
-#    print("Video Rating ",round(yt.rating))
-#    print("Thumbnail Url : ",yt.thumbnail_url)
-    
-#link = "YouTube Video URL "
-#yt = YouTube(link) # Create Youtube Object..
-
-# call the function
-#video_info(yt)
-
-
     try:
         youtube_object = YouTube(
             link,
@@ -149,6 +148,10 @@ def download_single_video(
             error_message = "Invalid download type. Choose 'MP4' or 'MP3'."
             show_error_message(error_message)
             return
+
+        # Save metadata
+        metadata = extract_metadata(youtube_object)
+        save_metadata_to_file(metadata, save_directory, video_title)
 
         display_message(f"Download completed!", f"{video_title}", text_area)
         update_progress_bar(
