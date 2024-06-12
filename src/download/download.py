@@ -4,6 +4,8 @@ import queue
 from pytube import YouTube, Playlist
 from utils.utils import show_error_message, clean_video_title
 import tkinter as tk
+import taglib  # For handling MP3 metadata
+import subprocess  # For handling MP4 metadata with ffmpeg
 
 # Parameter to update progress bar
 update_interval = 1
@@ -11,9 +13,11 @@ update_interval = 1
 message_queue = queue.Queue()
 download_queue = queue.Queue()
 
+
 def display_message(message, video_title, text_area):
     message_queue.put((message, video_title))
     threading.Thread(target=display_messages_from_queue, args=(text_area,)).start()
+
 
 def display_messages_from_queue(text_area):
     while not message_queue.empty():
@@ -26,6 +30,7 @@ def display_messages_from_queue(text_area):
         text_area.see(tk.END)
         text_area.config(state=tk.DISABLED)
         message_queue.task_done()
+
 
 def on_progress(
     stream,
@@ -43,6 +48,7 @@ def on_progress(
         percent, current_video, progress_var, progress_bar, progress_label, window
     )
 
+
 def update_progress_bar(
     percent, current_video, progress_var, progress_bar, progress_label, window
 ):
@@ -50,6 +56,7 @@ def update_progress_bar(
     progress_bar["value"] = percent
     progress_label.config(text=f"Progress: {percent:.2f}% (Video {current_video})")
     window.update_idletasks()
+
 
 def extract_metadata(youtube_object):
     metadata = {
@@ -64,11 +71,51 @@ def extract_metadata(youtube_object):
     }
     return metadata
 
+
+def set_mp3_metadata(file_path, metadata):
+    audio_file = taglib.File(file_path)
+    audio_file.tags["TITLE"] = [metadata["Title"]]
+    audio_file.tags["ARTIST"] = [metadata["Author"]]
+    audio_file.tags["COMMENT"] = [metadata["Description"]]
+    audio_file.tags["DATE"] = [str(metadata["Publish Date"])]
+    audio_file.tags["TRACKNUMBER"] = [str(metadata["Length (seconds)"])]
+    audio_file.tags["RATING"] = [str(metadata["Rating"])]
+    audio_file.tags["VIEWS"] = [str(metadata["Views"])]
+    audio_file.save()
+
+
+def set_mp4_metadata(file_path, metadata):
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-i",
+        file_path,
+        "-metadata",
+        f'title={metadata["Title"]}',
+        "-metadata",
+        f'artist={metadata["Author"]}',
+        "-metadata",
+        f'comment={metadata["Description"]}',
+        "-metadata",
+        f'date={metadata["Publish Date"]}',
+        "-metadata",
+        f'rating={metadata["Rating"]}',
+        "-metadata",
+        f'views={metadata["Views"]}',
+        "-codec",
+        "copy",  # to avoid re-encoding
+        f"{file_path}_temp.mp4",
+    ]
+    subprocess.run(ffmpeg_cmd)
+    os.remove(file_path)
+    os.rename(f"{file_path}_temp.mp4", file_path)
+
+
 def save_metadata_to_file(metadata, save_directory, video_title):
     metadata_file_path = os.path.join(save_directory, f"{video_title}_metadata.txt")
-    with open(metadata_file_path, 'w') as f:
+    with open(metadata_file_path, "w") as f:
         for key, value in metadata.items():
             f.write(f"{key}: {value}\n")
+
 
 def download_single_video(
     link,
@@ -123,7 +170,7 @@ def download_single_video(
 
             # Save metadata for MP4
             metadata = extract_metadata(youtube_object)
-            save_metadata_to_file(metadata, save_directory, video_title)
+            set_mp4_metadata(new_file, metadata)
 
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
@@ -134,6 +181,7 @@ def download_single_video(
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             display_message("Downloading video", f"{video_title}", text_area)
+            metadata = extract_metadata(youtube_object)
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -141,8 +189,7 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
             # Save metadata for MP3
-            metadata = extract_metadata(youtube_object)
-            save_metadata_to_file(metadata, save_directory, video_title)
+            set_mp3_metadata(new_file, metadata)
 
         else:
             display_message(
@@ -160,6 +207,7 @@ def download_single_video(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
+
 
 def download_playlist_threaded(
     playlist_link,
@@ -192,15 +240,18 @@ def download_playlist_threaded(
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
 
+
 def check_download_progress(save_directory, text_area, window):
     if os.listdir(save_directory):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
         window.after(1000, lambda: check_download_progress(save_directory, text_area))
 
+
 def add_to_queue(link, download_type, save_directory):
     download_queue.put((link, download_type, save_directory))
     display_message(f"Link added to queue: {link}", "")
+
 
 def download_single_video_threaded(
     link,
@@ -233,6 +284,7 @@ def download_single_video_threaded(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         show_error_message(error_message)
+
 
 def start_download_playlist_threaded_inner(
     playlist_link,
