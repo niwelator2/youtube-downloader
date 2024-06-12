@@ -60,14 +60,16 @@ def update_progress_bar(
 
 def extract_metadata(youtube_object):
     metadata = {
-        "Title": youtube_object.title,
-        "Length (seconds)": youtube_object.length,
-        "Views": youtube_object.views,
-        "Age Restricted": youtube_object.age_restricted,
+        "Title": youtube_object.title or "",
+        "Length (seconds)": youtube_object.length or 0,
+        "Views": youtube_object.views or 0,
+        "Age Restricted": youtube_object.age_restricted or False,
         "Rating": round(youtube_object.rating, 2) if youtube_object.rating else None,
-        "Description": youtube_object.description,
-        "Publish Date": youtube_object.publish_date,
-        "Author": youtube_object.author,
+        "Description": youtube_object.description or "",
+        "Publish Date": (
+            str(youtube_object.publish_date) if youtube_object.publish_date else ""
+        ),
+        "Author": youtube_object.author or "",
     }
     return metadata
 
@@ -77,9 +79,10 @@ def set_mp3_metadata(file_path, metadata):
     audio_file.tags["TITLE"] = [metadata["Title"]]
     audio_file.tags["ARTIST"] = [metadata["Author"]]
     audio_file.tags["COMMENT"] = [metadata["Description"]]
-    audio_file.tags["DATE"] = [str(metadata["Publish Date"])]
+    audio_file.tags["DATE"] = [metadata["Publish Date"]]
     audio_file.tags["TRACKNUMBER"] = [str(metadata["Length (seconds)"])]
-    audio_file.tags["RATING"] = [str(metadata["Rating"])]
+    if metadata["Rating"] is not None:
+        audio_file.tags["RATING"] = [str(metadata["Rating"])]
     audio_file.tags["VIEWS"] = [str(metadata["Views"])]
     audio_file.save()
 
@@ -98,13 +101,15 @@ def set_mp4_metadata(file_path, metadata):
         "-metadata",
         f'date={metadata["Publish Date"]}',
         "-metadata",
-        f'rating={metadata["Rating"]}',
+        f'rating={metadata["Rating"]}' if metadata["Rating"] is not None else "",
         "-metadata",
         f'views={metadata["Views"]}',
         "-codec",
         "copy",  # to avoid re-encoding
         f"{file_path}_temp.mp4",
     ]
+    # Remove empty metadata fields
+    ffmpeg_cmd = [arg for arg in ffmpeg_cmd if arg]
     subprocess.run(ffmpeg_cmd)
     os.remove(file_path)
     os.rename(f"{file_path}_temp.mp4", file_path)
