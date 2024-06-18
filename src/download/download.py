@@ -75,44 +75,68 @@ def extract_metadata(youtube_object):
 
 
 def set_mp3_metadata(file_path, metadata):
-    audio_file = taglib.File(file_path)
-    audio_file.tags["TITLE"] = [metadata["Title"]]
-    audio_file.tags["ARTIST"] = [metadata["Author"]]
-    audio_file.tags["COMMENT"] = [metadata["Description"]]
-    audio_file.tags["DATE"] = [metadata["Publish Date"]]
-    audio_file.tags["TRACKNUMBER"] = [str(metadata["Length (seconds)"])]
-    if metadata["Rating"] is not None:
-        audio_file.tags["RATING"] = [str(metadata["Rating"])]
-    audio_file.tags["VIEWS"] = [str(metadata["Views"])]
-    audio_file.save()
+    try:
+        audio_file = taglib.File(file_path)
+        audio_file.tags["TITLE"] = [metadata["Title"]]
+        audio_file.tags["ARTIST"] = [metadata["Author"]]
+        audio_file.tags["COMMENT"] = [metadata["Description"]]
+        audio_file.tags["DATE"] = [metadata["Publish Date"]]
+        audio_file.tags["TRACKNUMBER"] = [str(metadata["Length (seconds)"])]
+        if metadata["Rating"] is not None:
+            audio_file.tags["RATING"] = [str(metadata["Rating"])]
+        audio_file.tags["VIEWS"] = [str(metadata["Views"])]
+        audio_file.save()
+        print(f"Metadata set successfully for {file_path}")
+    except Exception as e:
+        print(f"Failed to set metadata for {file_path}: {str(e)}")
 
 
 def set_mp4_metadata(file_path, metadata):
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-i",
-        file_path,
-        "-metadata",
-        f'title={metadata["Title"]}',
-        "-metadata",
-        f'artist={metadata["Author"]}',
-        "-metadata",
-        f'comment={metadata["Description"]}',
-        "-metadata",
-        f'date={metadata["Publish Date"]}',
-        "-metadata",
-        f'rating={metadata["Rating"]}' if metadata["Rating"] is not None else "",
-        "-metadata",
-        f'views={metadata["Views"]}',
-        "-codec",
-        "copy",  # to avoid re-encoding
-        f"{file_path}_temp.mp4",
-    ]
-    # Remove empty metadata fields
-    ffmpeg_cmd = [arg for arg in ffmpeg_cmd if arg]
-    subprocess.run(ffmpeg_cmd)
-    os.remove(file_path)
-    os.rename(f"{file_path}_temp.mp4", file_path)
+    try:
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Input file {file_path} not found")
+
+        # Construct the ffmpeg command
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-metadata",
+            f'title={metadata["Title"]}' if metadata["Title"] else "",
+            "-metadata",
+            f'artist={metadata["Author"]}' if metadata["Author"] else "",
+            "-metadata",
+            f'comment={metadata["Description"]}' if metadata["Description"] else "",
+            "-metadata",
+            f'date={metadata["Publish Date"]}' if metadata["Publish Date"] else "",
+            "-metadata",
+            f'rating={metadata["Rating"]}' if metadata["Rating"] else "",
+            "-metadata",
+            f'views={metadata["Views"]}' if metadata["Views"] else "",
+            "-codec",
+            "copy",  # to avoid re-encoding
+            f"{file_path}_temp.mp4",
+        ]
+
+        # Remove empty arguments
+        ffmpeg_cmd = [arg for arg in ffmpeg_cmd if arg]
+
+        # Run the ffmpeg command
+        subprocess.run(ffmpeg_cmd, check=True)
+
+        # Replace the original file with the updated file
+        os.remove(file_path)
+        os.rename(f"{file_path}_temp.mp4", file_path)
+
+        print(f"Metadata set successfully for {file_path}")
+
+    except FileNotFoundError as fnf_error:
+        print(fnf_error)
+    except subprocess.CalledProcessError as cpe_error:
+        print(f"FFmpeg failed to set metadata for {file_path}: {cpe_error}")
+    except Exception as e:
+        print(f"Failed to set metadata for {file_path}: {e}")
 
 
 def save_metadata_to_file(metadata, save_directory, video_title):
@@ -251,11 +275,6 @@ def check_download_progress(save_directory, text_area, window):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
         window.after(1000, lambda: check_download_progress(save_directory, text_area))
-
-
-def add_to_queue(link, download_type, save_directory):
-    download_queue.put((link, download_type, save_directory))
-    display_message(f"Link added to queue: {link}", "")
 
 
 def download_single_video_threaded(

@@ -12,3 +12,4 @@ pyinstaller-hooks-contrib==2024.1
 pytube==15.0.0
 pywin32-ctypes==0.2.2
 setuptools==69.1.1
+pytaglib==3.0.0
