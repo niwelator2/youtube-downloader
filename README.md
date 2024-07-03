@@ -8,7 +8,8 @@ YouTube Downloader is a simple Python application that allows users to download 
 - Download entire YouTube playlists by providing the playlist URL.
 - Choose between downloading videos as MP4 or extracting audio as MP3.
 - Select the save directory for downloaded files.
-- Open an directory  containing downloaded files.
+- Open an directory containing downloaded files.
+- Save metada from youtube to files
 
 
 ## Dependencies

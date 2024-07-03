@@ -1,6 +1,8 @@
 import os
 import subprocess
-import taglib  # For handling MP3 metadata
+import taglib
+
+from utils.utils import show_error_message  # For handling MP3 metadata
 
 
 def extract_metadata(youtube_object):
@@ -32,12 +34,14 @@ def set_mp3_metadata(file_path, metadata):
         audio_file.save()
         print(f"Metadata set successfully for {file_path}")
     except Exception as e:
-        print(f"Failed to set metadata for {file_path}: {str(e)}")
+        error_message_setup_mp3_metadata = print(f"Failed to set metadata for {file_path}: {str(e)}")
+        show_error_message(error_message_setup_mp3_metadata)
 
 
 def set_mp4_metadata(file_path, metadata):
     try:
         # Check if file exists
+        print(file_path , metadata)
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Input file {file_path} not found")
 
@@ -51,14 +55,8 @@ def set_mp4_metadata(file_path, metadata):
             "-metadata",
             f'artist={metadata["Author"]}' if metadata["Author"] else "",
             "-metadata",
-            f'comment={metadata["Description"]}' if metadata["Description"] else "",
-            "-metadata",
             f'date={metadata["Publish Date"]}' if metadata["Publish Date"] else "",
             "-metadata",
-            f'rating={metadata["Rating"]}' if metadata["Rating"] else "",
-            "-metadata",
-            f'views={metadata["Views"]}' if metadata["Views"] else "",
-            "-codec",
             "copy",  # to avoid re-encoding
             f"{file_path}_temp.mp4",
         ]
