@@ -18,7 +18,13 @@ def extract_metadata(youtube_object):
         ),
         "Author": youtube_object.author or "",
     }
+
+    # metadata = { youtube_object.vid_info }
+
+
+
     return metadata
+
 
 def set_mp3_metadata(file_path, metadata):
     try:
@@ -34,14 +40,15 @@ def set_mp3_metadata(file_path, metadata):
         audio_file.save()
         print(f"Metadata set successfully for {file_path}")
     except Exception as e:
-        error_message_setup_mp3_metadata = print(f"Failed to set metadata for {file_path}: {str(e)}")
+        error_message_setup_mp3_metadata = print(
+            f"Failed to set metadata for {file_path}: {str(e)}"
+        )
         show_error_message(error_message_setup_mp3_metadata)
-
 
 def set_mp4_metadata(file_path, metadata):
     try:
         # Check if file exists
-        print(file_path , metadata)
+        print(file_path, metadata)
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Input file {file_path} not found")
 
@@ -86,3 +93,17 @@ def save_metadata_to_file(metadata, save_directory, video_title):
     with open(metadata_file_path, "w") as f:
         for key, value in metadata.items():
             f.write(f"{key}: {value}\n")
+
+
+
+
+
+# use vid_info 
+
+
+
+
+
+
+
+

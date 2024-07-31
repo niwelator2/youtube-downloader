@@ -32,21 +32,21 @@ def display_messages_from_queue(text_area):
         message_queue.task_done()
 
 
-def on_progress(
-    stream,
-    chunk,
-    bytes_remaining,
-    current_video,
-    progress_var,
-    progress_bar,
-    progress_label,
-    window,
-):
-    bytes_downloaded = stream.filesize - bytes_remaining
-    percent = (bytes_downloaded / stream.filesize) * 100
-    update_progress_bar(
-        percent, current_video, progress_var, progress_bar, progress_label, window
-    )
+# def on_progress(
+#     stream,
+#     chunk,
+#     bytes_remaining,
+#     current_video,
+#     progress_var,
+#     progress_bar,
+#     progress_label,
+#     window,
+# ):
+#     bytes_downloaded = stream.filesize - bytes_remaining
+#     percent = (bytes_downloaded / stream.filesize) * 100
+#     update_progress_bar(
+#         percent, current_video, progress_var, progress_bar, progress_label, window
+#     )
 
 
 def update_progress_bar(
@@ -59,35 +59,28 @@ def update_progress_bar(
 
 
 
+def download_single_video(link, current_video, progress_var, progress_bar, progress_label, window):
+    def on_progress(stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window):
+        # Implementation for updating progress (progress_var, progress_bar, etc.)
+        # Example: Updating the progress bar and label
+        total_size = stream.filesize
+        bytes_downloaded = total_size - bytes_remaining
+        percentage_of_completion = bytes_downloaded / total_size * 100
+        progress_var.set(percentage_of_completion)
+        progress_bar.update()
+        progress_label.config(text=f"Downloading {current_video}: {percentage_of_completion:.2f}%")
+        window.update_idletasks()
 
-def download_single_video(
-    link,
-    download_type,
-    save_directory,
-    current_video,
-    downloaded_titles,
-    text_area,
-    progress_var,
-    progress_bar,
-    progress_label,
-    window,
-):
     try:
         youtube_object = YouTube(
             link,
             on_progress_callback=lambda stream, chunk, bytes_remaining: on_progress(
-                stream,
-                chunk,
-                bytes_remaining,
-                current_video,
-                progress_var,
-                progress_bar,
-                progress_label,
-                window,
-            ),
+                stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window
+            )
         )
+        
         video_title = clean_video_title(youtube_object.title)
-
+        
         if youtube_object.age_restricted:
             display_message(f"This video is age-restricted. Skipping.", "", text_area)
             return
