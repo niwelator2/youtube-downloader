@@ -21,8 +21,6 @@ def extract_metadata(youtube_object):
 
     # metadata = { youtube_object.vid_info }
 
-
-
     return metadata
 
 
@@ -44,6 +42,7 @@ def set_mp3_metadata(file_path, metadata):
             f"Failed to set metadata for {file_path}: {str(e)}"
         )
         show_error_message(error_message_setup_mp3_metadata)
+
 
 def set_mp4_metadata(file_path, metadata):
     try:
@@ -95,15 +94,4 @@ def save_metadata_to_file(metadata, save_directory, video_title):
             f.write(f"{key}: {value}\n")
 
 
-
-
-
-# use vid_info 
-
-
-
-
-
-
-
-
+# use vid_info

@@ -58,9 +58,19 @@ def update_progress_bar(
     window.update_idletasks()
 
 
-
-def download_single_video(link, current_video, progress_var, progress_bar, progress_label, window):
-    def on_progress(stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window):
+def download_single_video(
+    link, current_video, progress_var, progress_bar, progress_label, window
+):
+    def on_progress(
+        stream,
+        chunk,
+        bytes_remaining,
+        current_video,
+        progress_var,
+        progress_bar,
+        progress_label,
+        window,
+    ):
         # Implementation for updating progress (progress_var, progress_bar, etc.)
         # Example: Updating the progress bar and label
         total_size = stream.filesize
@@ -68,19 +78,28 @@ def download_single_video(link, current_video, progress_var, progress_bar, progr
         percentage_of_completion = bytes_downloaded / total_size * 100
         progress_var.set(percentage_of_completion)
         progress_bar.update()
-        progress_label.config(text=f"Downloading {current_video}: {percentage_of_completion:.2f}%")
+        progress_label.config(
+            text=f"Downloading {current_video}: {percentage_of_completion:.2f}%"
+        )
         window.update_idletasks()
 
     try:
         youtube_object = YouTube(
             link,
             on_progress_callback=lambda stream, chunk, bytes_remaining: on_progress(
-                stream, chunk, bytes_remaining, current_video, progress_var, progress_bar, progress_label, window
-            )
+                stream,
+                chunk,
+                bytes_remaining,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            ),
         )
-        
+
         video_title = clean_video_title(youtube_object.title)
-        
+
         if youtube_object.age_restricted:
             display_message(f"This video is age-restricted. Skipping.", "", text_area)
             return
