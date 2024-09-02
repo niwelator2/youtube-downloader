@@ -2,7 +2,7 @@ import os
 import threading
 import queue
 from pytube import YouTube, Playlist
-from download.metadata import extract_metadata, set_mp3_metadata, set_mp4_metadata
+#from download.metadata import extract_metadata, set_mp3_metadata, set_mp4_metadata
 from utils.utils import show_error_message, clean_video_title
 import tkinter as tk
 import subprocess  # For handling MP4 metadata with ffmpeg
@@ -59,7 +59,16 @@ def update_progress_bar(
 
 
 def download_single_video(
-    link, current_video, progress_var, progress_bar, progress_label, window
+    link,
+    download_type,
+    save_directory,
+    current_video,
+    downloaded_titles,
+    text_area,
+    progress_var,
+    progress_bar,
+    progress_label,
+    window,
 ):
     def on_progress(
         stream,
@@ -124,8 +133,8 @@ def download_single_video(
             os.rename(video_file, new_file)
 
             # Save metadata for MP4
-            metadata = extract_metadata(youtube_object)
-            set_mp4_metadata(new_file, metadata)
+          #  metadata = extract_metadata(youtube_object)
+           # set_mp4_metadata(new_file, metadata)
 
         elif download_type == "MP3":
             audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
@@ -136,7 +145,7 @@ def download_single_video(
                 return
             stream = youtube_object.streams.filter(only_audio=True).first()
             display_message("Downloading video", f"{video_title}", text_area)
-            metadata = extract_metadata(youtube_object)
+           # metadata = extract_metadata(youtube_object)
             audio_file = stream.download(
                 output_path=save_directory, filename=video_title
             )
@@ -144,7 +153,7 @@ def download_single_video(
             os.rename(audio_file, new_file)
 
             # Save metadata for MP3
-            set_mp3_metadata(new_file, metadata)
+            #set_mp3_metadata(new_file, metadata)
 
         else:
             display_message(
@@ -200,7 +209,9 @@ def check_download_progress(save_directory, text_area, window):
     if os.listdir(save_directory):
         display_message(f"Start downloading playlist!", "", text_area)
     else:
-        window.after(1000, lambda: check_download_progress(save_directory, text_area))
+        window.after(
+            1000, lambda: check_download_progress(save_directory, text_area, window)
+        )
 
 
 def download_single_video_threaded(
@@ -277,4 +288,5 @@ def start_download_playlist_threaded_inner(
         display_message(f"Playlist download completed!", "", text_area)
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
+        display_message(error_message)
         show_error_message(error_message)

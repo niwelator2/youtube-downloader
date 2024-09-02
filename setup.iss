@@ -1,8 +1,9 @@
-define MyAppName "Youtube-downloader"
+#define MyAppName "Youtube-downloader"
 #define MyAppVersion "2.3"
 #define MyAppPublisher "niwelator2"
 #define MyAppURL "https://gitlab.com/niwelator2/youtube-downloader"
 #define MyAppExeName "Youtube-Downloader.exe"
+
 
 [Setup]
 AppId={{7203776C-FF1C-414E-86C4-A14E83C4873E}}
