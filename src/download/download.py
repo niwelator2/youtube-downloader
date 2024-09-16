@@ -64,26 +64,26 @@ def download_single_video(
     window,
 ):
     def on_progress(d):
-        if d['status'] == 'downloading':
-            percent = d['downloaded_bytes'] / d['total_bytes'] * 100
+        if d["status"] == "downloading":
+            percent = d["downloaded_bytes"] / d["total_bytes"] * 100
             progress_var.set(percent)
             progress_bar.update()
-            progress_label.config(
-                text=f"Downloading {current_video}: {percent:.2f}%"
-            )
+            progress_label.config(text=f"Downloading {current_video}: {percent:.2f}%")
             window.update_idletasks()
 
     ydl_opts = {
-        'outtmpl': os.path.join(save_directory, '%(title)s.%(ext)s'),
-        'progress_hooks': [on_progress],
-        'format': 'bestaudio/best' if download_type == "MP3" else 'bestvideo+bestaudio/best',
-        'noplaylist': True
+        "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
+        "progress_hooks": [on_progress],
+        "format": (
+            "bestaudio/best" if download_type == "MP3" else "bestvideo+bestaudio/best"
+        ),
+        "noplaylist": True,
     }
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(link, download=True)
-            video_title = clean_video_title(info_dict['title'])
+            video_title = clean_video_title(info_dict["title"])
 
             if video_title in downloaded_titles:
                 display_message("Skipping duplicate video", "", text_area)
@@ -95,7 +95,9 @@ def download_single_video(
             if download_type == "MP3":
                 audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
                 if os.path.exists(audio_file_path):
-                    display_message(f"Audio already exists. Skipping", f"{video_title}", text_area)
+                    display_message(
+                        f"Audio already exists. Skipping", f"{video_title}", text_area
+                    )
                     return
 
                 metadata = extract_metadata(info_dict)
@@ -105,14 +107,18 @@ def download_single_video(
             elif download_type == "MP4":
                 video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
                 if os.path.exists(video_file_path):
-                    display_message(f"Video already exists.", f"{video_title}", text_area)
+                    display_message(
+                        f"Video already exists.", f"{video_title}", text_area
+                    )
                     return
 
                 metadata = extract_metadata(info_dict)
                 set_mp4_metadata(video_file_path, metadata)
 
             else:
-                display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+                display_message(
+                    "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
+                )
                 show_error_message("Invalid download type. Choose 'MP4' or 'MP3'.")
                 return
 
@@ -124,7 +130,6 @@ def download_single_video(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         logging.error(error_message)
-        show_error_message(error_message)
 
 
 # Function to handle threaded playlist download
@@ -141,7 +146,16 @@ def download_playlist_threaded(
     try:
         playlist_download_thread = threading.Thread(
             target=start_download_playlist_threaded_inner,
-            args=(playlist_link, download_type, save_directory, text_area, progress_var, progress_label, progress_bar, window),
+            args=(
+                playlist_link,
+                download_type,
+                save_directory,
+                text_area,
+                progress_var,
+                progress_label,
+                progress_bar,
+                window,
+            ),
         )
         playlist_download_thread.start()
         window.after(
@@ -177,7 +191,18 @@ def download_single_video_threaded(
     try:
         download_thread = threading.Thread(
             target=download_single_video,
-            args=(link, download_type, save_directory, current_video, set(), text_area, progress_var, progress_bar, progress_label, window),
+            args=(
+                link,
+                download_type,
+                save_directory,
+                current_video,
+                set(),
+                text_area,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            ),
         )
         download_thread.start()
     except Exception as e:
@@ -236,14 +261,14 @@ def start_download_playlist_threaded_inner(
 # Metadata extraction and setting functions
 def extract_metadata(info_dict):
     metadata = {
-        "Title": info_dict.get('title', ""),
-        "Length (seconds)": info_dict.get('duration', 0),
-        "Views": info_dict.get('view_count', 0),
-        "Age Restricted": info_dict.get('age_restricted', False),
-        "Rating": info_dict.get('average_rating', None),
-        "Description": info_dict.get('description', ""),
-        "Publish Date": info_dict.get('upload_date', ""),
-        "Author": info_dict.get('uploader', ""),
+        "Title": info_dict.get("title", ""),
+        "Length (seconds)": info_dict.get("duration", 0),
+        "Views": info_dict.get("view_count", 0),
+        "Age Restricted": info_dict.get("age_restricted", False),
+        "Rating": info_dict.get("average_rating", None),
+        "Description": info_dict.get("description", ""),
+        "Publish Date": info_dict.get("upload_date", ""),
+        "Author": info_dict.get("uploader", ""),
     }
     return metadata
 
