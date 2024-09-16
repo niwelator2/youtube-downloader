@@ -1,8 +1,10 @@
 import os
 import threading
 import queue
-from pytube import YouTube, Playlist
-from utils.utils import show_error_message, clean_video_title
+from yt_dlp import YoutubeDL
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, ID3NoHeaderError, ID3FileType
+from mutagen.easyid3 import EasyID3
 import tkinter as tk
 import subprocess
 import logging
@@ -61,81 +63,63 @@ def download_single_video(
     progress_label,
     window,
 ):
-    def on_progress(stream, chunk, bytes_remaining):
-        total_size = stream.filesize
-        bytes_downloaded = total_size - bytes_remaining
-        percentage_of_completion = bytes_downloaded / total_size * 100
-        progress_var.set(percentage_of_completion)
-        progress_bar.update()
-        progress_label.config(
-            text=f"Downloading {current_video}: {percentage_of_completion:.2f}%"
-        )
-        window.update_idletasks()
+    def on_progress(d):
+        if d['status'] == 'downloading':
+            percent = d['downloaded_bytes'] / d['total_bytes'] * 100
+            progress_var.set(percent)
+            progress_bar.update()
+            progress_label.config(
+                text=f"Downloading {current_video}: {percent:.2f}%"
+            )
+            window.update_idletasks()
+
+    ydl_opts = {
+        'outtmpl': os.path.join(save_directory, '%(title)s.%(ext)s'),
+        'progress_hooks': [on_progress],
+        'format': 'bestaudio/best' if download_type == "MP3" else 'bestvideo+bestaudio/best',
+        'noplaylist': True
+    }
 
     try:
-        youtube_object = YouTube(link, on_progress_callback=on_progress)
+        with YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(link, download=True)
+            video_title = clean_video_title(info_dict['title'])
 
-        video_title = clean_video_title(youtube_object.title)
-
-        if youtube_object.age_restricted:
-            display_message("This video is age-restricted. Skipping.", "", text_area)
-            return
-
-        if video_title in downloaded_titles:
-            display_message("Skipping duplicate video", "", text_area)
-            return
-
-        downloaded_titles.add(video_title)
-
-        if download_type == "MP4":
-            video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
-            if os.path.exists(video_file_path):
-                display_message(f"Video already exists.", f"{video_title}", text_area)
+            if video_title in downloaded_titles:
+                display_message("Skipping duplicate video", "", text_area)
                 return
 
-            stream = youtube_object.streams.get_highest_resolution()
-            display_message(f"Downloading video", f"{video_title}", text_area)
-            video_file = stream.download(
-                output_path=save_directory, filename=video_title
-            )
+            downloaded_titles.add(video_title)
 
-            # Rename and set metadata
-            new_file = os.path.join(save_directory, f"{video_title}.mp4")
-            os.rename(video_file, new_file)
-            metadata = extract_metadata(youtube_object)
-            set_mp4_metadata(new_file, metadata)
+            # Handle MP3 metadata
+            if download_type == "MP3":
+                audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
+                if os.path.exists(audio_file_path):
+                    display_message(f"Audio already exists. Skipping", f"{video_title}", text_area)
+                    return
 
-        elif download_type == "MP3":
-            audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
-            if os.path.exists(audio_file_path):
-                display_message(
-                    f"Audio already exists. Skipping", f"{video_title}", text_area
-                )
+                metadata = extract_metadata(info_dict)
+                set_mp3_metadata(audio_file_path, metadata)
+
+            # Handle MP4 metadata
+            elif download_type == "MP4":
+                video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
+                if os.path.exists(video_file_path):
+                    display_message(f"Video already exists.", f"{video_title}", text_area)
+                    return
+
+                metadata = extract_metadata(info_dict)
+                set_mp4_metadata(video_file_path, metadata)
+
+            else:
+                display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+                show_error_message("Invalid download type. Choose 'MP4' or 'MP3'.")
                 return
 
-            stream = youtube_object.streams.filter(only_audio=True).first()
-            display_message("Downloading video", f"{video_title}", text_area)
-            audio_file = stream.download(
-                output_path=save_directory, filename=video_title
+            display_message("Download completed!", f"{video_title}", text_area)
+            update_progress_bar(
+                100, current_video, progress_var, progress_bar, progress_label, window
             )
-
-            # Rename and set metadata
-            new_file = os.path.join(save_directory, f"{video_title}.mp3")
-            os.rename(audio_file, new_file)
-            metadata = extract_metadata(youtube_object)
-            set_mp3_metadata(new_file, metadata)
-
-        else:
-            display_message(
-                "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
-            )
-            show_error_message("Invalid download type. Choose 'MP4' or 'MP3'.")
-            return
-
-        display_message("Download completed!", f"{video_title}", text_area)
-        update_progress_bar(
-            100, current_video, progress_var, progress_bar, progress_label, window
-        )
 
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
@@ -157,16 +141,7 @@ def download_playlist_threaded(
     try:
         playlist_download_thread = threading.Thread(
             target=start_download_playlist_threaded_inner,
-            args=(
-                playlist_link,
-                download_type,
-                save_directory,
-                text_area,
-                progress_var,
-                progress_label,
-                progress_bar,
-                window,
-            ),
+            args=(playlist_link, download_type, save_directory, text_area, progress_var, progress_label, progress_bar, window),
         )
         playlist_download_thread.start()
         window.after(
@@ -202,18 +177,7 @@ def download_single_video_threaded(
     try:
         download_thread = threading.Thread(
             target=download_single_video,
-            args=(
-                link,
-                download_type,
-                save_directory,
-                current_video,
-                set(),
-                text_area,
-                progress_var,
-                progress_bar,
-                progress_label,
-                window,
-            ),
+            args=(link, download_type, save_directory, current_video, set(), text_area, progress_var, progress_bar, progress_label, window),
         )
         download_thread.start()
     except Exception as e:
@@ -270,36 +234,32 @@ def start_download_playlist_threaded_inner(
 
 
 # Metadata extraction and setting functions
-def extract_metadata(youtube_object):
+def extract_metadata(info_dict):
     metadata = {
-        "Title": youtube_object.title or "",
-        "Length (seconds)": youtube_object.length or 0,
-        "Views": youtube_object.views or 0,
-        "Age Restricted": youtube_object.age_restricted or False,
-        "Rating": round(youtube_object.rating, 2) if youtube_object.rating else None,
-        "Description": youtube_object.description or "",
-        "Publish Date": (
-            str(youtube_object.publish_date) if youtube_object.publish_date else ""
-        ),
-        "Author": youtube_object.author or "",
+        "Title": info_dict.get('title', ""),
+        "Length (seconds)": info_dict.get('duration', 0),
+        "Views": info_dict.get('view_count', 0),
+        "Age Restricted": info_dict.get('age_restricted', False),
+        "Rating": info_dict.get('average_rating', None),
+        "Description": info_dict.get('description', ""),
+        "Publish Date": info_dict.get('upload_date', ""),
+        "Author": info_dict.get('uploader', ""),
     }
     return metadata
 
 
 def set_mp3_metadata(file_path, metadata):
     try:
-        import taglib
-
-        audio_file = taglib.File(file_path)
-        audio_file.tags["TITLE"] = [metadata["Title"]]
-        audio_file.tags["ARTIST"] = [metadata["Author"]]
-        audio_file.tags["COMMENT"] = [metadata["Description"]]
-        audio_file.tags["DATE"] = [metadata["Publish Date"]]
-        audio_file.tags["TRACKNUMBER"] = [str(metadata["Length (seconds)"])]
+        audio = MP3(file_path, ID3=EasyID3)
+        audio["title"] = metadata["Title"]
+        audio["artist"] = metadata["Author"]
+        audio["album"] = metadata["Description"]
+        audio["date"] = metadata["Publish Date"]
+        audio["tracknumber"] = str(metadata["Length (seconds)"])
         if metadata["Rating"] is not None:
-            audio_file.tags["RATING"] = [str(metadata["Rating"])]
-        audio_file.tags["VIEWS"] = [str(metadata["Views"])]
-        audio_file.save()
+            audio["RATING"] = str(metadata["Rating"])
+        audio["VIEWS"] = str(metadata["Views"])
+        audio.save()
         logging.info(f"Metadata set successfully for {file_path}")
     except Exception as e:
         error_message = f"Failed to set metadata for {file_path}: {str(e)}"
