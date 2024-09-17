@@ -1,10 +1,14 @@
 import os
 import threading
 import queue
+import time
+from utils.utils import clean_video_title
 from yt_dlp import YoutubeDL
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError, ID3FileType
 from mutagen.easyid3 import EasyID3
+import traceback
+
 import tkinter as tk
 import subprocess
 import logging
@@ -18,7 +22,6 @@ update_interval = 1
 
 # Create queues for message and download management
 message_queue = queue.Queue()
-download_queue = queue.Queue()
 
 
 # Function to display messages in the UI
@@ -30,9 +33,7 @@ def display_message(message, video_title, text_area):
 def display_messages_from_queue(text_area):
     while not message_queue.empty():
         message, video_title = message_queue.get()
-        title = "System message"
-        if video_title:
-            title = video_title
+        title = "System message" if not video_title else video_title
         text_area.config(state=tk.NORMAL)
         text_area.insert(tk.END, f"{title}: {message}\n")
         text_area.see(tk.END)
@@ -95,9 +96,7 @@ def download_single_video(
             if download_type == "MP3":
                 audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
                 if os.path.exists(audio_file_path):
-                    display_message(
-                        f"Audio already exists. Skipping", f"{video_title}", text_area
-                    )
+                    display_message(f"Audio already exists. Skipping", f"{video_title}", text_area)
                     return
 
                 metadata = extract_metadata(info_dict)
@@ -107,19 +106,14 @@ def download_single_video(
             elif download_type == "MP4":
                 video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
                 if os.path.exists(video_file_path):
-                    display_message(
-                        f"Video already exists.", f"{video_title}", text_area
-                    )
+                    display_message(f"Video already exists.", f"{video_title}", text_area)
                     return
 
                 metadata = extract_metadata(info_dict)
                 set_mp4_metadata(video_file_path, metadata)
 
             else:
-                display_message(
-                    "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
-                )
-                show_error_message("Invalid download type. Choose 'MP4' or 'MP3'.")
+                display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
                 return
 
             display_message("Download completed!", f"{video_title}", text_area)
@@ -129,7 +123,8 @@ def download_single_video(
 
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
+        logging.error(f"{error_message}\n{traceback.format_exc()}")
+
 
 
 # Function to handle threaded playlist download
@@ -144,7 +139,7 @@ def download_playlist_threaded(
     window,
 ):
     try:
-        playlist_download_thread = threading.Thread(
+        threading.Thread(
             target=start_download_playlist_threaded_inner,
             args=(
                 playlist_link,
@@ -156,15 +151,13 @@ def download_playlist_threaded(
                 progress_bar,
                 window,
             ),
-        )
-        playlist_download_thread.start()
+        ).start()
         window.after(
             1000, lambda: check_download_progress(save_directory, text_area, window)
         )
     except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
-        show_error_message(error_message)
+        logging.error(f"An error has occurred: {str(e)}")
+        display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
 def check_download_progress(save_directory, text_area, window):
@@ -189,7 +182,7 @@ def download_single_video_threaded(
     window,
 ):
     try:
-        download_thread = threading.Thread(
+        threading.Thread(
             target=download_single_video,
             args=(
                 link,
@@ -203,12 +196,10 @@ def download_single_video_threaded(
                 progress_label,
                 window,
             ),
-        )
-        download_thread.start()
+        ).start()
     except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
-        show_error_message(error_message)
+        logging.error(f"An error has occurred: {str(e)}")
+        display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
 # Function to download a playlist using a thread pool
@@ -223,8 +214,31 @@ def start_download_playlist_threaded_inner(
     window,
 ):
     try:
-        playlist = Playlist(playlist_link)
-        total_videos = len(playlist.video_urls)
+        # Initialize YoutubeDL
+        with YoutubeDL({}) as ydl:
+            try:
+                # Extract playlist info
+                playlist_info = ydl.extract_info(playlist_link, download=False)
+            except Exception as e:
+                logging.error(f"Failed to extract playlist info: {str(e)}")
+                display_message(f"Failed to extract playlist info: {str(e)}", "", text_area)
+                return
+            
+            # Check for entries in playlist
+            if "entries" not in playlist_info:
+                display_message("No videos found in the playlist.", "", text_area)
+                return
+            
+            playlist_video_urls = []
+            for entry in playlist_info["entries"]:
+                if entry and "url" in entry:
+                    playlist_video_urls.append(entry["url"])
+                else:
+                    logging.warning(f"Entry missing 'url': {entry}")
+                    display_message("Skipping entry due to missing URL", "", text_area)
+        
+        # Proceed with downloading videos
+        total_videos = len(playlist_video_urls)
         downloaded_titles = set()
 
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -241,7 +255,7 @@ def start_download_playlist_threaded_inner(
                     progress_label,
                     window,
                 )
-                for current_video, video_url in enumerate(playlist.video_urls, 1)
+                for current_video, video_url in enumerate(playlist_video_urls, 1)
             ]
             for future in futures:
                 try:
@@ -252,10 +266,9 @@ def start_download_playlist_threaded_inner(
         display_message("Playlist download completed!", "", text_area)
 
     except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
-        display_message(error_message, "", text_area)
-        show_error_message(error_message)
+        logging.error(f"An error has occurred: {str(e)}")
+        display_message(f"An error has occurred: {str(e)}", "", text_area)
+
 
 
 # Metadata extraction and setting functions
@@ -289,7 +302,6 @@ def set_mp3_metadata(file_path, metadata):
     except Exception as e:
         error_message = f"Failed to set metadata for {file_path}: {str(e)}"
         logging.error(error_message)
-        show_error_message(error_message)
 
 
 def set_mp4_metadata(file_path, metadata):
@@ -309,7 +321,11 @@ def set_mp4_metadata(file_path, metadata):
             f'artist={metadata["Author"]}',
             "-metadata",
             f'date={metadata["Publish Date"]}',
-            "-y",  # Overwrite output files without asking
+            "-metadata",
+            f'description={metadata["Description"]}',
+            "-metadata",
+            f'comment={metadata.get("Comments", "")}',  
+            "-y",
             f"{file_path}_temp.mp4",
         ]
 
@@ -321,10 +337,9 @@ def set_mp4_metadata(file_path, metadata):
 
     except FileNotFoundError as fnf_error:
         logging.error(fnf_error)
-        show_error_message(str(fnf_error))
+
     except subprocess.CalledProcessError as cpe_error:
         logging.error(f"FFmpeg failed to set metadata: {cpe_error}")
-        show_error_message(f"FFmpeg failed to set metadata: {cpe_error}")
+
     except Exception as e:
         logging.error(f"Failed to set metadata: {e}")
-        show_error_message(f"Failed to set metadata: {e}")
