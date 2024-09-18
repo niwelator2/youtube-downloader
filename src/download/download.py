@@ -67,32 +67,45 @@ def download_single_video(
     def on_progress(d):
         if d["status"] == "downloading":
             percent = d["downloaded_bytes"] / d["total_bytes"] * 100
-            progress_var.set(percent)
-            progress_bar.update()
-            progress_label.config(text=f"Downloading {current_video}: {percent:.2f}%")
-            window.update_idletasks()
+            update_progress_bar(
+                percent,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            )
+
+    # Define format selection based on download type
+    if download_type == "MP3":
+        format_selection = "bestaudio[ext=mp3]"
+        postprocessors = [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "120",
+            }
+        ]
+    elif download_type == "MP4":
+        format_selection = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
+        postprocessors = []
+    else:
+        display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+        return
 
     ydl_opts = {
-        "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
-        "progress_hooks": [on_progress],
-        "format": (
-            "bestaudio[ext=mp3]"
-            if download_type == "MP3"
-            else "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
-        ),  # Select MP3 for audio or MP4 for video
-        "postprocessors": (
-            [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "320",  # Set quality for MP3
-                }
-            ]
-            if download_type == "MP3"
-            else []
-        ),
-        "noplaylist": False,
-    }
+    "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
+    "progress_hooks": [on_progress],
+    "format": "bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        },
+    ],
+    "noplaylist": False,
+}
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -100,7 +113,7 @@ def download_single_video(
             video_title = clean_video_title(info_dict["title"])
 
             if video_title in downloaded_titles:
-                display_message("Skipping duplicate video", "", text_area)
+                display_message("Skipping duplicate video", video_title, text_area)
                 return
 
             downloaded_titles.add(video_title)
@@ -110,7 +123,7 @@ def download_single_video(
                 audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
                 if os.path.exists(audio_file_path):
                     display_message(
-                        f"Audio already exists. Skipping", f"{video_title}", text_area
+                        "Audio already exists. Skipping", video_title, text_area
                     )
                     return
 
@@ -122,20 +135,14 @@ def download_single_video(
                 video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
                 if os.path.exists(video_file_path):
                     display_message(
-                        f"Video already exists.", f"{video_title}", text_area
+                        "Video already exists. Skipping", video_title, text_area
                     )
                     return
 
                 metadata = extract_metadata(info_dict)
                 set_mp4_metadata(video_file_path, metadata)
 
-            else:
-                display_message(
-                    "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
-                )
-                return
-
-            display_message("Download completed!", f"{video_title}", text_area)
+            display_message("Download completed!", video_title, text_area)
             update_progress_bar(
                 100, current_video, progress_var, progress_bar, progress_label, window
             )
@@ -143,6 +150,7 @@ def download_single_video(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         logging.error(f"{error_message}\n{traceback.format_exc()}")
+        display_message(error_message, "", text_area)
 
 
 # Function to handle threaded playlist download
@@ -216,11 +224,10 @@ def download_single_video_threaded(
             ),
         ).start()
     except Exception as e:
-        logging.error(f"An error has occurred: {str(e)}")
+        logging.error(f"An error has occurred: {str(e)}", text_area)
         display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
-# Function to download a playlist using a thread pool
 def start_download_playlist_threaded_inner(
     playlist_link,
     download_type,
@@ -245,22 +252,74 @@ def start_download_playlist_threaded_inner(
                 return
 
             # Check for entries in playlist
-            if "entries" not in playlist_info:
+            if "entries" not in playlist_info or not playlist_info["entries"]:
                 display_message("No videos found in the playlist.", "", text_area)
                 return
 
-            playlist_video_urls = []
-            for entry in playlist_info["entries"]:
-                if entry and "url" in entry:
-                    playlist_video_urls.append(entry["url"])
-                else:
-                    logging.warning(f"Entry missing 'url': {entry}")
-                    display_message("Skipping entry due to missing URL", "", text_area)
+        # Initialize video URL list and counters
+        playlist_video_urls = []
+        problematic_entries = []  # List to track problematic entries
+        valid_video_urls = []  # List to store valid URLs
 
-        # Proceed with downloading videos
-        total_videos = len(playlist_video_urls)
-        downloaded_titles = set()
+        # Process playlist entries
+        for entry in playlist_info["entries"]:
+            if entry is None:
+                # Log missing entry
+                problematic_entries.append({"reason": "Empty entry", "entry": entry})
+                continue
 
+            if entry.get("is_private"):
+                # Log private video
+                problematic_entries.append({"reason": "Private video", "entry": entry})
+                playlist_video_urls.append(
+                    "PRIVATE_VIDEO"
+                )  # Placeholder for private video
+                continue
+
+            if entry.get("is_deleted"):
+                # Log deleted video
+                problematic_entries.append({"reason": "Deleted video", "entry": entry})
+                playlist_video_urls.append(
+                    "DELETED_VIDEO"
+                )  # Placeholder for deleted video
+                continue
+
+            if "url" not in entry:
+                # Log missing URL
+                problematic_entries.append({"reason": "Missing URL", "entry": entry})
+                playlist_video_urls.append("MISSING_URL")  # Placeholder for missing URL
+                continue
+
+            # Add valid URL to the list
+            video_url = entry["url"]
+            playlist_video_urls.append(video_url)
+            valid_video_urls.append(video_url)  # Save the valid URL
+
+        # Log problematic entries
+        if problematic_entries:
+            display_message(
+                f"Processed {len(problematic_entries)} problematic entries.",
+                "",
+                text_area,
+            )
+            for problem in problematic_entries:
+                display_message(
+                    f"Reason: {problem['reason']}, Entry: {problem['entry']}",
+                    "",
+                    text_area,
+                )
+
+        # Proceed with downloading valid videos
+        if not valid_video_urls:
+            display_message("No valid videos found in the playlist.", "", text_area)
+            return
+
+        total_videos = len(valid_video_urls)
+
+        # Save the valid URLs to a file or log
+        save_valid_urls(valid_video_urls, save_directory)
+
+        # Download videos concurrently
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [
                 executor.submit(
@@ -275,7 +334,7 @@ def start_download_playlist_threaded_inner(
                     progress_label,
                     window,
                 )
-                for current_video, video_url in enumerate(playlist_video_urls, 1)
+                for current_video, video_url in enumerate(valid_video_urls, 1)
             ]
             for future in futures:
                 try:
@@ -290,15 +349,23 @@ def start_download_playlist_threaded_inner(
         display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
+def save_valid_urls(valid_urls, save_directory):
+    """Save valid URLs to a file for later reference"""
+    file_path = os.path.join(save_directory, "valid_video_urls.txt")
+    try:
+        with open(file_path, "w") as f:
+            for url in valid_urls:
+                f.write(f"{url}\n")
+        display_message(f"Saved valid URLs to {file_path}", "", text_area)  # type: ignore
+    except Exception as e:
+        display_message(f"Failed to save valid URLs: {str(e)}", "", text_area)  # type: ignore
+
+
 # Metadata extraction and setting functions
 def extract_metadata(info_dict):
     metadata = {
         "Title": info_dict.get("title", ""),
         "Length (seconds)": info_dict.get("duration", 0),
-        "Views": info_dict.get("view_count", 0),
-        "Age Restricted": info_dict.get("age_restricted", False),
-        "Rating": info_dict.get("average_rating", None),
-        "Description": info_dict.get("description", ""),
         "Publish Date": info_dict.get("upload_date", ""),
         "Author": info_dict.get("uploader", ""),
     }
@@ -313,9 +380,6 @@ def set_mp3_metadata(file_path, metadata):
         audio["album"] = metadata["Description"]
         audio["date"] = metadata["Publish Date"]
         audio["tracknumber"] = str(metadata["Length (seconds)"])
-        if metadata["Rating"] is not None:
-            audio["RATING"] = str(metadata["Rating"])
-        audio["VIEWS"] = str(metadata["Views"])
         audio.save()
         logging.info(f"Metadata set successfully for {file_path}")
     except Exception as e:
@@ -341,9 +405,6 @@ def set_mp4_metadata(file_path, metadata):
             "-metadata",
             f'date={metadata["Publish Date"]}',
             "-metadata",
-            f'description={metadata["Description"]}',
-            "-metadata",
-            f'comment={metadata.get("Comments", "")}',
             "-y",
             f"{file_path}_temp.mp4",
         ]
