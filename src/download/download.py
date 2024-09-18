@@ -73,20 +73,26 @@ def download_single_video(
             window.update_idletasks()
 
     ydl_opts = {
-    "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
-    "progress_hooks": [on_progress],
-    "format": (
-        "bestaudio[ext=mp3]" if download_type == "MP3" else "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
-    ),  # Select MP3 for audio or MP4 for video
-    "postprocessors": [
-        {
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "320",  # Set quality for MP3
-        }
-    ] if download_type == "MP3" else [],
-    "noplaylist": False,
-}
+        "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
+        "progress_hooks": [on_progress],
+        "format": (
+            "bestaudio[ext=mp3]"
+            if download_type == "MP3"
+            else "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
+        ),  # Select MP3 for audio or MP4 for video
+        "postprocessors": (
+            [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "320",  # Set quality for MP3
+                }
+            ]
+            if download_type == "MP3"
+            else []
+        ),
+        "noplaylist": False,
+    }
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -103,7 +109,9 @@ def download_single_video(
             if download_type == "MP3":
                 audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
                 if os.path.exists(audio_file_path):
-                    display_message(f"Audio already exists. Skipping", f"{video_title}", text_area)
+                    display_message(
+                        f"Audio already exists. Skipping", f"{video_title}", text_area
+                    )
                     return
 
                 metadata = extract_metadata(info_dict)
@@ -113,14 +121,18 @@ def download_single_video(
             elif download_type == "MP4":
                 video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
                 if os.path.exists(video_file_path):
-                    display_message(f"Video already exists.", f"{video_title}", text_area)
+                    display_message(
+                        f"Video already exists.", f"{video_title}", text_area
+                    )
                     return
 
                 metadata = extract_metadata(info_dict)
                 set_mp4_metadata(video_file_path, metadata)
 
             else:
-                display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+                display_message(
+                    "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
+                )
                 return
 
             display_message("Download completed!", f"{video_title}", text_area)
@@ -131,7 +143,6 @@ def download_single_video(
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"
         logging.error(f"{error_message}\n{traceback.format_exc()}")
-
 
 
 # Function to handle threaded playlist download
@@ -228,14 +239,16 @@ def start_download_playlist_threaded_inner(
                 playlist_info = ydl.extract_info(playlist_link, download=False)
             except Exception as e:
                 logging.error(f"Failed to extract playlist info: {str(e)}")
-                display_message(f"Failed to extract playlist info: {str(e)}", "", text_area)
+                display_message(
+                    f"Failed to extract playlist info: {str(e)}", "", text_area
+                )
                 return
-            
+
             # Check for entries in playlist
             if "entries" not in playlist_info:
                 display_message("No videos found in the playlist.", "", text_area)
                 return
-            
+
             playlist_video_urls = []
             for entry in playlist_info["entries"]:
                 if entry and "url" in entry:
@@ -243,7 +256,7 @@ def start_download_playlist_threaded_inner(
                 else:
                     logging.warning(f"Entry missing 'url': {entry}")
                     display_message("Skipping entry due to missing URL", "", text_area)
-        
+
         # Proceed with downloading videos
         total_videos = len(playlist_video_urls)
         downloaded_titles = set()
@@ -275,7 +288,6 @@ def start_download_playlist_threaded_inner(
     except Exception as e:
         logging.error(f"An error has occurred: {str(e)}")
         display_message(f"An error has occurred: {str(e)}", "", text_area)
-
 
 
 # Metadata extraction and setting functions
@@ -331,7 +343,7 @@ def set_mp4_metadata(file_path, metadata):
             "-metadata",
             f'description={metadata["Description"]}',
             "-metadata",
-            f'comment={metadata.get("Comments", "")}',  
+            f'comment={metadata.get("Comments", "")}',
             "-y",
             f"{file_path}_temp.mp4",
         ]
