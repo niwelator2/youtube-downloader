@@ -73,13 +73,20 @@ def download_single_video(
             window.update_idletasks()
 
     ydl_opts = {
-        "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
-        "progress_hooks": [on_progress],
-        "format": (
-            "bestaudio/best" if download_type == "MP3" else "bestvideo+bestaudio/best"
-        ),
-        "noplaylist": True,
-    }
+    "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
+    "progress_hooks": [on_progress],
+    "format": (
+        "bestaudio[ext=mp3]" if download_type == "MP3" else "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
+    ),  # Select MP3 for audio or MP4 for video
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "320",  # Set quality for MP3
+        }
+    ] if download_type == "MP3" else [],
+    "noplaylist": False,
+}
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
