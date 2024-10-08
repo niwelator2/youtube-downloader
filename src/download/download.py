@@ -397,7 +397,7 @@ def set_mp4_metadata(file_path, metadata):
             "-i",
             file_path,
             "-c",
-            "copy",  # Avoid re-encoding
+            "copy",  
             "-metadata",
             f'title={metadata["Title"]}',
             "-metadata",
