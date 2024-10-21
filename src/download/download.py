@@ -8,7 +8,12 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError, ID3FileType
 from mutagen.easyid3 import EasyID3
 import traceback
-
+from utils.ydl_opts import (
+    ydl_opts_multi_mp3,
+    ydl_opts_multi_mp4,
+    ydl_opts_single_mp3,
+    ydl_opts_single_mp4,
+)
 import tkinter as tk
 import subprocess
 import logging
@@ -64,6 +69,15 @@ def download_single_video(
     progress_label,
     window,
 ):
+    # Select the correct ydl_opts based on download type and single video
+    if download_type == "MP3":
+        ydl_opts = ydl_opts_single_mp3
+    elif download_type == "MP4":
+        ydl_opts = ydl_opts_single_mp4
+    else:
+        display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+        return
+
     def on_progress(d):
         if d["status"] == "downloading":
             percent = d["downloaded_bytes"] / d["total_bytes"] * 100
@@ -76,36 +90,8 @@ def download_single_video(
                 window,
             )
 
-    # Define format selection based on download type
-    if download_type == "MP3":
-        format_selection = "bestaudio[ext=mp3]"
-        postprocessors = [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "120",
-            }
-        ]
-    elif download_type == "MP4":
-        format_selection = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
-        postprocessors = []
-    else:
-        display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
-        return
-
-    ydl_opts = {
-    "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
-    "progress_hooks": [on_progress],
-    "format": "bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
-    "postprocessors": [
-        {
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",
-        },
-    ],
-    "noplaylist": False,
-}
+    ydl_opts["progress_hooks"] = [on_progress]
+    ydl_opts["outtmpl"] = os.path.join(save_directory, "%(title)s.%(ext)s")
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -264,33 +250,24 @@ def start_download_playlist_threaded_inner(
         # Process playlist entries
         for entry in playlist_info["entries"]:
             if entry is None:
-                # Log missing entry
                 problematic_entries.append({"reason": "Empty entry", "entry": entry})
                 continue
 
             if entry.get("is_private"):
-                # Log private video
                 problematic_entries.append({"reason": "Private video", "entry": entry})
-                playlist_video_urls.append(
-                    "PRIVATE_VIDEO"
-                )  # Placeholder for private video
+                playlist_video_urls.append("PRIVATE_VIDEO")
                 continue
 
             if entry.get("is_deleted"):
-                # Log deleted video
                 problematic_entries.append({"reason": "Deleted video", "entry": entry})
-                playlist_video_urls.append(
-                    "DELETED_VIDEO"
-                )  # Placeholder for deleted video
+                playlist_video_urls.append("DELETED_VIDEO")
                 continue
 
             if "url" not in entry:
-                # Log missing URL
                 problematic_entries.append({"reason": "Missing URL", "entry": entry})
-                playlist_video_urls.append("MISSING_URL")  # Placeholder for missing URL
+                playlist_video_urls.append("MISSING_URL")
                 continue
 
-            # Add valid URL to the list
             video_url = entry["url"]
             playlist_video_urls.append(video_url)
             valid_video_urls.append(video_url)  # Save the valid URL
@@ -309,7 +286,6 @@ def start_download_playlist_threaded_inner(
                     text_area,
                 )
 
-        # Proceed with downloading valid videos
         if not valid_video_urls:
             display_message("No valid videos found in the playlist.", "", text_area)
             return
@@ -319,22 +295,34 @@ def start_download_playlist_threaded_inner(
         # Save the valid URLs to a file or log
         save_valid_urls(valid_video_urls, save_directory)
 
+        # Select the correct ydl_opts based on download type and playlist
+        if download_type == "MP3":
+            ydl_opts = ydl_opts_multi_mp3
+        elif download_type == "MP4":
+            ydl_opts = ydl_opts_multi_mp4
+        else:
+            display_message(
+                "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
+            )
+            return
+
         # Download videos concurrently
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
-                    download_single_video_threaded,
+                    download_single_video,
                     video_url,
                     download_type,
                     save_directory,
-                    current_video,
+                    i,
+                    set(),
                     text_area,
                     progress_var,
                     progress_bar,
                     progress_label,
                     window,
                 )
-                for current_video, video_url in enumerate(valid_video_urls, 1)
+                for i, video_url in enumerate(valid_video_urls, 1)
             ]
             for future in futures:
                 try:
@@ -349,44 +337,41 @@ def start_download_playlist_threaded_inner(
         display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
-def save_valid_urls(valid_urls, save_directory):
-    """Save valid URLs to a file for later reference"""
-    file_path = os.path.join(save_directory, "valid_video_urls.txt")
-    try:
-        with open(file_path, "w") as f:
-            for url in valid_urls:
-                f.write(f"{url}\n")
-        display_message(f"Saved valid URLs to {file_path}", "", text_area)  # type: ignore
-    except Exception as e:
-        display_message(f"Failed to save valid URLs: {str(e)}", "", text_area)  # type: ignore
+# Function to save the valid URLs of the playlist to a log or file
+def save_valid_urls(valid_video_urls, save_directory):
+    valid_urls_file = os.path.join(save_directory, "valid_video_urls.txt")
+    with open(valid_urls_file, "w") as f:
+        for url in valid_video_urls:
+            f.write(f"{url}\n")
 
 
-# Metadata extraction and setting functions
+# Function to extract metadata for MP3 or MP4
 def extract_metadata(info_dict):
     metadata = {
-        "Title": info_dict.get("title", ""),
-        "Length (seconds)": info_dict.get("duration", 0),
-        "Publish Date": info_dict.get("upload_date", ""),
-        "Author": info_dict.get("uploader", ""),
+        "title": info_dict.get("title", ""),
+        "uploader": info_dict.get("uploader", ""),
+        "upload_date": info_dict.get("upload_date", ""),
+        "description": info_dict.get("description", ""),
     }
     return metadata
 
 
-def set_mp3_metadata(file_path, metadata):
+# Function to set metadata for MP3 files
+def set_mp3_metadata(audio_file_path, metadata):
     try:
-        audio = MP3(file_path, ID3=EasyID3)
-        audio["title"] = metadata["Title"]
-        audio["artist"] = metadata["Author"]
-        audio["album"] = metadata["Description"]
-        audio["date"] = metadata["Publish Date"]
-        audio["tracknumber"] = str(metadata["Length (seconds)"])
+        audio = MP3(audio_file_path, ID3=EasyID3)
+        audio["title"] = metadata["title"]
+        audio["artist"] = metadata["uploader"]
+        audio["album"] = metadata["description"]
+        audio["date"] = metadata["upload_date"]
         audio.save()
-        logging.info(f"Metadata set successfully for {file_path}")
+        logging.info(f"Metadata set successfully for {audio_file_path}")
     except Exception as e:
-        error_message = f"Failed to set metadata for {file_path}: {str(e)}"
+        error_message = f"Failed to set metadata for {audio_file_path}: {str(e)}"
         logging.error(error_message)
 
 
+# Function to set metadata for MP4 files
 def set_mp4_metadata(file_path, metadata):
     try:
         if not os.path.exists(file_path):
@@ -397,14 +382,13 @@ def set_mp4_metadata(file_path, metadata):
             "-i",
             file_path,
             "-c",
-            "copy",  
+            "copy",
             "-metadata",
-            f'title={metadata["Title"]}',
+            f'title={metadata["title"]}',
             "-metadata",
-            f'artist={metadata["Author"]}',
+            f'artist={metadata["uploader"]}',
             "-metadata",
-            f'date={metadata["Publish Date"]}',
-            "-metadata",
+            f'date={metadata["upload_date"]}',
             "-y",
             f"{file_path}_temp.mp4",
         ]
