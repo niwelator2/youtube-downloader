@@ -1,0 +1,29 @@
+2024-12-04 20:46:22,207 - ERROR - An error has occurred: [0;31mERROR:[0m [youtube] 7LnESh-xb_E: Sign in to confirm your age. This video may be inappropriate for some users. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+Traceback (most recent call last):
+  File "yt_dlp\YoutubeDL.py", line 1624, in wrapper
+  File "yt_dlp\YoutubeDL.py", line 1759, in __extract_info
+  File "yt_dlp\extractor\common.py", line 742, in extract
+  File "yt_dlp\extractor\youtube.py", line 4465, in _real_extract
+  File "yt_dlp\extractor\common.py", line 1276, in raise_no_formats
+yt_dlp.utils.ExtractorError: [youtube] 7LnESh-xb_E: Sign in to confirm your age. This video may be inappropriate for some users. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "download\download.py", line 206, in start_download_playlist_threaded_inner
+    playlist_info = ydl.extract_info(playlist_link, download=False)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "yt_dlp\YoutubeDL.py", line 1613, in extract_info
+  File "yt_dlp\YoutubeDL.py", line 1624, in wrapper
+  File "yt_dlp\YoutubeDL.py", line 1780, in __extract_info
+  File "yt_dlp\YoutubeDL.py", line 1909, in process_ie_result
+  File "yt_dlp\YoutubeDL.py", line 2056, in __process_playlist
+  File "yt_dlp\YoutubeDL.py", line 1624, in wrapper
+  File "yt_dlp\YoutubeDL.py", line 2088, in __process_iterable_entry
+  File "yt_dlp\YoutubeDL.py", line 1859, in process_ie_result
+  File "yt_dlp\YoutubeDL.py", line 1613, in extract_info
+  File "yt_dlp\YoutubeDL.py", line 1642, in wrapper
+  File "yt_dlp\YoutubeDL.py", line 1090, in report_error
+  File "yt_dlp\YoutubeDL.py", line 1029, in trouble
+yt_dlp.utils.DownloadError: [0;31mERROR:[0m [youtube] 7LnESh-xb_E: Sign in to confirm your age. This video may be inappropriate for some users. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+

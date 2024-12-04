@@ -11,6 +11,8 @@ def select_save_directory(entry_widget, initial_dir=None):
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
         set_last_directory(directory)
+        return directory  # Return the directory
+    return None  # Explicitly return None if no directory is selected
 
 
 def set_last_directory(directory):
@@ -33,3 +35,12 @@ def show_error_message(message):
 def clean_video_title(title):
     # Remove invalid characters for file names and trim spaces
     return re.sub(r'[<>:"/\\|?*]', "", title).strip()
+
+
+def on_progress(progress):
+    if progress["status"] == "downloading":
+        print(
+            f"Downloading: {progress['_percent_str']} | Speed: {progress['_speed_str']} | ETA: {progress['eta']}s"
+        )
+    elif progress["status"] == "finished":
+        print(f"Download complete: {progress['filename']}")
