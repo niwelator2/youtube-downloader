@@ -2,16 +2,15 @@ import os
 import threading
 import queue
 import time
-from utils.utils import clean_video_title
+from utils.utils import clean_video_title, on_progress
 from yt_dlp import YoutubeDL
-from mutagen.mp3 import MP3
-from mutagen.easyid3 import EasyID3
 import traceback
 from utils.ydl_opts import (
     get_ydl_opts_single_mp3,
     get_ydl_opts_single_mp4,
     get_ydl_opts_multi_mp3,
     get_ydl_opts_multi_mp4,
+    get_ydl_opts_with_cookies
 )
 import tkinter as tk
 import logging
@@ -75,6 +74,7 @@ def download_single_video(
     progress_bar,
     progress_label,
     window,
+    cookies_path=None
 ):
     if download_type == "MP3":
         ydl_opts = get_ydl_opts_single_mp3
@@ -84,7 +84,7 @@ def download_single_video(
         display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
         return
 
-    def on_progress(d):
+    def on_progress_hook(d):
         if d["status"] == "downloading" and d.get("total_bytes"):
             percent = d["downloaded_bytes"] / d["total_bytes"] * 100
             update_progress_bar(
@@ -96,7 +96,8 @@ def download_single_video(
                 window,
             )
 
-    ydl_opts["progress_hooks"] = [on_progress]
+    ydl_opts = ydl_opts(text_area, cookies_path)
+    ydl_opts["progress_hooks"] = [on_progress_hook]
     ydl_opts["outtmpl"] = os.path.join(save_directory, "%(title)s.%(ext)s")
 
     try:
@@ -118,6 +119,8 @@ def download_single_video(
         error_message = f"An error has occurred: {str(e)}"
         logging.error(f"{error_message}\n{traceback.format_exc()}")
         display_message(error_message, "", text_area)
+
+
 # Function to handle threaded playlist download
 def download_playlist_threaded(
     playlist_link,
@@ -128,6 +131,7 @@ def download_playlist_threaded(
     progress_label,
     progress_bar,
     window,
+    cookies_path=None
 ):
     try:
         threading.Thread(
@@ -141,14 +145,16 @@ def download_playlist_threaded(
                 progress_label,
                 progress_bar,
                 window,
+                cookies_path,
             ),
         ).start()
-        window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window)
-        )
+       # window.after(
+       #     1000, lambda: check_download_progress(save_directory, text_area, window)
+       # )
     except Exception as e:
         logging.error(f"An error has occurred: {str(e)}")
         display_message(f"An error has occurred: {str(e)}", "", text_area)
+
 
 # Function to save valid URLs to a file
 def save_valid_urls(valid_video_urls, save_directory):
@@ -161,65 +167,6 @@ def save_valid_urls(valid_video_urls, save_directory):
         logging.error(f"Failed to save valid URLs: {e}")
 
 
-def download_single_video_threaded(
-    link,
-    download_type,
-    save_directory,
-    current_video,
-    text_area,
-    progress_var,
-    progress_bar,
-    progress_label,
-    window,
-):
-    try:
-        threading.Thread(
-            target=download_single_video,
-            args=(
-                link,
-                download_type,
-                save_directory,
-                current_video,
-                set(),  # Shared set for downloaded_titles
-                text_area,
-                progress_var,
-                progress_bar,
-                progress_label,
-                window,
-            ),
-        ).start()
-    except Exception as e:
-        logging.error(f"An error has occurred: {str(e)}", exc_info=True)
-        display_message(f"An error has occurred: {str(e)}", "", text_area)
-
-
-# Function to download a playlist in a separate thread
-def download_playlist_threaded(
-    playlist_link,
-    download_type,
-    save_directory,
-    text_area,
-    progress_var,
-    progress_label,
-    progress_bar,
-    window,
-):
-    threading.Thread(
-        target=start_download_playlist_threaded_inner,
-        args=(
-            playlist_link,
-            download_type,
-            save_directory,
-            text_area,
-            progress_var,
-            progress_label,
-            progress_bar,
-            window,
-            set(),
-        ),
-    ).start()
-
-
 def start_download_playlist_threaded_inner(
     playlist_link,
     download_type,
@@ -229,8 +176,7 @@ def start_download_playlist_threaded_inner(
     progress_label,
     progress_bar,
     window,
-    downloaded_titles,
-    cookies_path  # Add cookies path as a parameter
+    cookies_path=None,
 ):
     try:
         # Debug: Print the playlist link to ensure it's correct
@@ -279,12 +225,13 @@ def start_download_playlist_threaded_inner(
                         download_type,
                         save_directory,
                         current_video,
-                        downloaded_titles,
+                        set(),  # Shared set for downloaded_titles
                         text_area,
                         progress_var,
                         progress_bar,
                         progress_label,
                         window,
+                        cookies_path
                     )
 
                     # Once the video is downloaded, save it immediately
