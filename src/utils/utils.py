@@ -17,7 +17,6 @@ def select_save_directory(entry_widget, initial_dir=None):
         return None
 
 
-
 def set_last_directory(directory):
     with open(".last_directory", "w") as f:
         f.write(directory)

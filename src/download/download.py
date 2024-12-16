@@ -71,7 +71,7 @@ def download_single_video(
     progress_var,
     progress_bar,
     progress_label,
-    window
+    window,
 ):
     if download_type == "MP3":
         ydl_opts = get_ydl_opts_single_mp3
@@ -127,7 +127,7 @@ def download_playlist_threaded(
     progress_var,
     progress_label,
     progress_bar,
-    window
+    window,
 ):
     try:
         threading.Thread(
@@ -216,9 +216,7 @@ def start_download_playlist_threaded_inner(
                     )
                 except Exception as e:
                     logging.error(f"Error downloading video {video_url}: {e}")
-                    display_message(
-                        f"Failed to download: {video_url}", "", text_area
-                    )
+                    display_message(f"Failed to download: {video_url}", "", text_area)
 
                 update_progress_bar(
                     (current_video / total_videos) * 100,

@@ -53,17 +53,23 @@ def setup_gui():
     notebook.add(single_tab, text="Single Video Download")
 
     # Single video input fields and buttons
-    Label(single_tab, text="YouTube URL:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+    Label(single_tab, text="YouTube URL:").grid(
+        row=0, column=0, padx=10, pady=5, sticky="w"
+    )
     link_entry = Entry(single_tab, width=50)
     link_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
 
-    Label(single_tab, text="Download Type:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+    Label(single_tab, text="Download Type:").grid(
+        row=1, column=0, padx=10, pady=5, sticky="w"
+    )
     download_type_var = StringVar(single_tab)
     download_type_var.set("MP4")
     download_type_menu = OptionMenu(single_tab, download_type_var, "MP4", "MP3")
     download_type_menu.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 
-    Label(single_tab, text="Save Directory:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
+    Label(single_tab, text="Save Directory:").grid(
+        row=2, column=0, padx=10, pady=5, sticky="w"
+    )
     save_directory_entry = Entry(single_tab, width=50)
     save_directory_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 
@@ -77,18 +83,18 @@ def setup_gui():
     select_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky="w")
 
     download_button = Button(
-    single_tab,
-    text="Download Single Video",
-    command=lambda: download_single_video(
-        link_entry.get(),
-        download_type_var.get(),
-        save_directory_entry.get(),
-        1,  
-        text_area,
-        progress_var,
-        progress_bar,
-        progress_label,
-        window,  
+        single_tab,
+        text="Download Single Video",
+        command=lambda: download_single_video(
+            link_entry.get(),
+            download_type_var.get(),
+            save_directory_entry.get(),
+            1,
+            text_area,
+            progress_var,
+            progress_bar,
+            progress_label,
+            window  # Make sure window is passed correctly
         ),
     )
 
@@ -106,11 +112,15 @@ def setup_gui():
     notebook.add(playlist_tab, text="Playlist Download")
 
     # Playlist input fields and buttons
-    Label(playlist_tab, text="YouTube Playlist URL:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+    Label(playlist_tab, text="YouTube Playlist URL:").grid(
+        row=0, column=0, padx=10, pady=5, sticky="w"
+    )
     playlist_link_entry = Entry(playlist_tab, width=50)
     playlist_link_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
 
-    Label(playlist_tab, text="Download Type:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+    Label(playlist_tab, text="Download Type:").grid(
+        row=1, column=0, padx=10, pady=5, sticky="w"
+    )
     download_type_playlist_var = StringVar(playlist_tab)
     download_type_playlist_var.set("MP4")
     download_type_playlist_menu = OptionMenu(
@@ -118,7 +128,9 @@ def setup_gui():
     )
     download_type_playlist_menu.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 
-    Label(playlist_tab, text="Save Directory:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
+    Label(playlist_tab, text="Save Directory:").grid(
+        row=2, column=0, padx=10, pady=5, sticky="w"
+    )
     playlist_save_directory_entry = Entry(playlist_tab, width=50)
     playlist_save_directory_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 

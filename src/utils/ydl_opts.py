@@ -1,9 +1,11 @@
 import os
 from utils.utils import on_progress, select_save_directory
 
+
 # Function to get the save directory from the entry widget
 def get_save_directory(entry_widget):
     return entry_widget.get()
+
 
 # Single video MP3 options with cookies
 def get_ydl_opts_single_mp3(entry_widget, cookies_path=None):
@@ -20,8 +22,9 @@ def get_ydl_opts_single_mp3(entry_widget, cookies_path=None):
         ],
         "noplaylist": True,
     }
-    
+
     return ydl_opts
+
 
 # Single video MP4 options with cookies
 def get_ydl_opts_single_mp4(entry_widget, cookies_path=None):
@@ -32,6 +35,7 @@ def get_ydl_opts_single_mp4(entry_widget, cookies_path=None):
         "noplaylist": True,
     }
     return ydl_opts
+
 
 def get_ydl_opts_playlist(download_type):
     """
@@ -65,4 +69,3 @@ def get_ydl_opts_playlist(download_type):
         raise ValueError("Invalid download type. Use 'MP3' or 'MP4'.")
 
     return ydl_opts
-
