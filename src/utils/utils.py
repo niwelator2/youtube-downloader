@@ -7,10 +7,14 @@ import re
 
 def select_save_directory(entry_widget, initial_dir=None):
     directory = filedialog.askdirectory(initialdir=initial_dir)
-    if directory:
+    if directory and os.path.isdir(directory):  # Validate directory
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
         set_last_directory(directory)
+        return directory
+    else:
+        show_error_message("Invalid directory. Please select a valid location.")
+        return None
 
 
 def set_last_directory(directory):
@@ -33,3 +37,12 @@ def show_error_message(message):
 def clean_video_title(title):
     # Remove invalid characters for file names and trim spaces
     return re.sub(r'[<>:"/\\|?*]', "", title).strip()
+
+
+def on_progress(progress):
+    if progress["status"] == "downloading":
+        print(
+            f"Downloading: {progress['_percent_str']} | Speed: {progress['_speed_str']} | ETA: {progress['eta']}s"
+        )
+    elif progress["status"] == "finished":
+        print(f"Download complete: {progress['filename']}")
