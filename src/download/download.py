@@ -6,16 +6,14 @@ from utils.utils import clean_video_title, on_progress
 from yt_dlp import YoutubeDL
 import traceback
 from utils.ydl_opts import (
+    get_ydl_opts_playlist,
     get_ydl_opts_single_mp3,
     get_ydl_opts_single_mp4,
-    get_ydl_opts_multi_mp3,
-    get_ydl_opts_multi_mp4,
-    get_ydl_opts_with_cookies
 )
 import tkinter as tk
 import logging
 
-# Set up logging
+
 logging.basicConfig(
     filename="download.log",
     level=logging.INFO,
@@ -73,8 +71,7 @@ def download_single_video(
     progress_var,
     progress_bar,
     progress_label,
-    window,
-    cookies_path=None
+    window
 ):
     if download_type == "MP3":
         ydl_opts = get_ydl_opts_single_mp3
@@ -96,7 +93,7 @@ def download_single_video(
                 window,
             )
 
-    ydl_opts = ydl_opts(text_area, cookies_path)
+    ydl_opts = ydl_opts(text_area)
     ydl_opts["progress_hooks"] = [on_progress_hook]
     ydl_opts["outtmpl"] = os.path.join(save_directory, "%(title)s.%(ext)s")
 
@@ -130,8 +127,7 @@ def download_playlist_threaded(
     progress_var,
     progress_label,
     progress_bar,
-    window,
-    cookies_path=None
+    window
 ):
     try:
         threading.Thread(
@@ -145,12 +141,8 @@ def download_playlist_threaded(
                 progress_label,
                 progress_bar,
                 window,
-                cookies_path,
             ),
         ).start()
-       # window.after(
-       #     1000, lambda: check_download_progress(save_directory, text_area, window)
-       # )
     except Exception as e:
         logging.error(f"An error has occurred: {str(e)}")
         display_message(f"An error has occurred: {str(e)}", "", text_area)
@@ -176,22 +168,15 @@ def start_download_playlist_threaded_inner(
     progress_label,
     progress_bar,
     window,
-    cookies_path=None,
 ):
     try:
-        # Debug: Print the playlist link to ensure it's correct
         logging.info(f"Processing playlist: {playlist_link}")
 
-        # Define the options with cookies for authentication if required
-        ydl_opts = get_ydl_opts_with_cookies(cookies_path, download_type)
+        ydl_opts = get_ydl_opts_playlist(download_type)
 
-        # Use yt-dlp to extract playlist info
         with YoutubeDL(ydl_opts) as ydl:
             playlist_info = ydl.extract_info(playlist_link, download=False)
-            
-            # Debug: Log playlist info to see the response from yt-dlp
-            logging.info(f"Playlist info extracted: {playlist_info}")
-            
+
             if (
                 not playlist_info
                 or "entries" not in playlist_info
@@ -200,15 +185,11 @@ def start_download_playlist_threaded_inner(
                 display_message("No videos found in the playlist.", "", text_area)
                 return
 
-            # Extract valid URLs from the playlist
             valid_video_urls = [
                 entry["url"]
                 for entry in playlist_info["entries"]
                 if entry and "url" in entry
             ]
-
-            # Debug: Log the valid URLs to see which URLs are being extracted
-            logging.info(f"Valid video URLs extracted: {valid_video_urls}")
 
             if not valid_video_urls:
                 display_message("No valid videos found in the playlist.", "", text_area)
@@ -217,32 +198,28 @@ def start_download_playlist_threaded_inner(
             save_valid_urls(valid_video_urls, save_directory)
 
             total_videos = len(valid_video_urls)
+            downloaded_titles = set()
+
             for current_video, video_url in enumerate(valid_video_urls, start=1):
-                video_title = ""
                 try:
-                    video_title = download_single_video(
+                    download_single_video(
                         video_url,
                         download_type,
                         save_directory,
                         current_video,
-                        set(),  # Shared set for downloaded_titles
+                        downloaded_titles,
                         text_area,
                         progress_var,
                         progress_bar,
                         progress_label,
                         window,
-                        cookies_path
                     )
-
-                    # Once the video is downloaded, save it immediately
-                    if video_title:
-                        display_message(f"Downloaded: {video_title}", video_title, text_area)
-
                 except Exception as e:
                     logging.error(f"Error downloading video {video_url}: {e}")
-                    display_message(f"Failed to download: {video_url}", video_title, text_area)
+                    display_message(
+                        f"Failed to download: {video_url}", "", text_area
+                    )
 
-                # Update progress bar after each video is downloaded
                 update_progress_bar(
                     (current_video / total_videos) * 100,
                     current_video,

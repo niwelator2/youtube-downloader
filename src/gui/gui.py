@@ -12,54 +12,58 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-from download import download_single_video_threaded, download_playlist_threaded
+from download import download_single_video, download_playlist_threaded
 from utils.utils import select_save_directory, load_last_directory, show_error_message
 
 
 def setup_gui():
+    """
+    Sets up the GUI for the YouTube Downloader application.
+    """
+    # Initialize main window
     window = tk.Tk()
     window.title("YouTube Downloader v2.3")
     window.geometry("800x400")
 
-    # Construct the absolute path to the icon file
+    # Set the window icon
     script_dir = os.path.dirname(os.path.abspath(__file__))
     icon_path = os.path.join(script_dir, "icon", "logo.ico")
     window.iconbitmap(icon_path)
 
-    # Create a Label to display progress
+    # Progress bar and progress label
     progress_var = DoubleVar()
     progress_label = Label(window, text="Progress: 0.00%")
     progress_label.pack(pady=5)
 
-    # Create a text area for system messages
+    progress_bar = ttk.Progressbar(
+        window, length=400, mode="determinate", variable=progress_var
+    )
+    progress_bar.pack(pady=10, fill=tk.X)
+
+    # Text area for system messages
     text_area = tk.Text(window, wrap=tk.WORD, state=tk.DISABLED, height=6, width=80)
     text_area.pack(pady=5, fill=tk.BOTH, expand=True)
 
-    # Create a notebook to organize the single video and playlist download sections
+    # Create a notebook to separate Single Video and Playlist tabs
     notebook = ttk.Notebook(window)
     notebook.pack(pady=10, fill=tk.BOTH, expand=True)
 
-    # Single video download tab
+    # --- Single Video Download Tab ---
     single_tab = ttk.Frame(notebook)
     notebook.add(single_tab, text="Single Video Download")
 
-    Label(single_tab, text="YouTube URL:").grid(
-        row=0, column=0, padx=10, pady=5, sticky="w"
-    )
+    # Single video input fields and buttons
+    Label(single_tab, text="YouTube URL:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
     link_entry = Entry(single_tab, width=50)
     link_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
 
-    Label(single_tab, text="Download Type:").grid(
-        row=1, column=0, padx=10, pady=5, sticky="w"
-    )
+    Label(single_tab, text="Download Type:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
     download_type_var = StringVar(single_tab)
     download_type_var.set("MP4")
     download_type_menu = OptionMenu(single_tab, download_type_var, "MP4", "MP3")
     download_type_menu.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 
-    Label(single_tab, text="Save Directory:").grid(
-        row=2, column=0, padx=10, pady=5, sticky="w"
-    )
+    Label(single_tab, text="Save Directory:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
     save_directory_entry = Entry(single_tab, width=50)
     save_directory_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 
@@ -73,20 +77,21 @@ def setup_gui():
     select_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky="w")
 
     download_button = Button(
-        single_tab,
-        text="Download Single Video",
-        command=lambda: download_single_video_threaded(
-            link_entry.get(),
-            download_type_var.get(),
-            save_directory_entry.get(),
-            1,
-            text_area,
-            progress_var,
-            progress_bar,
-            progress_label,
-            window,
+    single_tab,
+    text="Download Single Video",
+    command=lambda: download_single_video(
+        link_entry.get(),
+        download_type_var.get(),
+        save_directory_entry.get(),
+        1,  
+        text_area,
+        progress_var,
+        progress_bar,
+        progress_label,
+        window,  
         ),
     )
+
     download_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
     open_directory_button = Button(
@@ -96,19 +101,16 @@ def setup_gui():
     )
     open_directory_button.grid(row=3, column=2, padx=10, pady=5)
 
-    # Playlist download tab
+    # --- Playlist Download Tab ---
     playlist_tab = ttk.Frame(notebook)
     notebook.add(playlist_tab, text="Playlist Download")
 
-    Label(playlist_tab, text="YouTube Playlist URL:").grid(
-        row=0, column=0, padx=10, pady=5, sticky="w"
-    )
+    # Playlist input fields and buttons
+    Label(playlist_tab, text="YouTube Playlist URL:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
     playlist_link_entry = Entry(playlist_tab, width=50)
     playlist_link_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
 
-    Label(playlist_tab, text="Download Type:").grid(
-        row=1, column=0, padx=10, pady=5, sticky="w"
-    )
+    Label(playlist_tab, text="Download Type:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
     download_type_playlist_var = StringVar(playlist_tab)
     download_type_playlist_var.set("MP4")
     download_type_playlist_menu = OptionMenu(
@@ -116,9 +118,7 @@ def setup_gui():
     )
     download_type_playlist_menu.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 
-    Label(playlist_tab, text="Save Directory:").grid(
-        row=2, column=0, padx=10, pady=5, sticky="w"
-    )
+    Label(playlist_tab, text="Save Directory:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
     playlist_save_directory_entry = Entry(playlist_tab, width=50)
     playlist_save_directory_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 
@@ -154,18 +154,17 @@ def setup_gui():
     )
     open_playlist_directory_button.grid(row=3, column=2, padx=10, pady=5)
 
-    # Progress bar
-    progress_bar = ttk.Progressbar(
-        window, length=400, mode="determinate", variable=progress_var
-    )
-    progress_bar.pack(pady=10, fill=tk.X)
-
+    # Load the last directory if available
     last_directory = load_last_directory()
     if last_directory:
         save_directory_entry.insert(0, last_directory)
         playlist_save_directory_entry.insert(0, last_directory)
 
+    # --- Utility Functions ---
     def reset_values():
+        """
+        Resets all input fields, progress, and messages to default values.
+        """
         link_entry.delete(0, tk.END)
         playlist_link_entry.delete(0, tk.END)
         save_directory_entry.delete(0, tk.END)
@@ -176,15 +175,19 @@ def setup_gui():
         text_area.delete(1.0, tk.END)
         text_area.config(state=tk.DISABLED)
 
-    reset_button = Button(window, text="Reset Values", command=reset_values)
-    reset_button.pack(pady=5)
-
     def open_directory(entry):
+        """
+        Opens the directory specified in the entry field.
+        """
         directory = entry.get()
         if os.path.exists(directory):
             os.startfile(directory)
         else:
             show_error_message(f"Directory not found: {directory}")
+
+    # Reset button
+    reset_button = Button(window, text="Reset Values", command=reset_values)
+    reset_button.pack(pady=5)
 
     return window, text_area, progress_var, progress_label, progress_bar
 

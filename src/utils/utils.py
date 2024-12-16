@@ -7,12 +7,15 @@ import re
 
 def select_save_directory(entry_widget, initial_dir=None):
     directory = filedialog.askdirectory(initialdir=initial_dir)
-    if directory:
+    if directory and os.path.isdir(directory):  # Validate directory
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
         set_last_directory(directory)
-        return directory  # Return the directory
-    return None  # Explicitly return None if no directory is selected
+        return directory
+    else:
+        show_error_message("Invalid directory. Please select a valid location.")
+        return None
+
 
 
 def set_last_directory(directory):

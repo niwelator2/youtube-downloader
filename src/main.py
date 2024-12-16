@@ -1,5 +1,5 @@
 import tkinter as tk
-from gui import setup_gui
+from gui.gui import setup_gui
 import threading
 
 
