@@ -71,7 +71,7 @@ def display_message(message, video_title, text_area, download_type):
 
 def display_messages_from_queue(text_area):
     while not message_queue.empty():
-        message, video_title,download_type = message_queue.get()
+        message, video_title, download_type = message_queue.get()
         title = "System message"
         if video_title:
             title = f"{video_title} ({download_type})"
@@ -80,3 +80,12 @@ def display_messages_from_queue(text_area):
         text_area.see(tk.END)
         text_area.config(state=tk.DISABLED)
         message_queue.task_done()
+
+
+def check_download_progress(save_directory, text_area, window):
+    if os.listdir(save_directory):
+        display_message("Start downloading playlist!", "", text_area)
+    else:
+        window.after(
+            1000, lambda: check_download_progress(save_directory, text_area, window)
+        )

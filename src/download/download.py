@@ -2,15 +2,16 @@ import os
 import threading
 import queue
 from yt_dlp import YoutubeDL
-from mutagen.mp3 import MP3
-from mutagen.id3 import ID3, ID3NoHeaderError, ID3FileType
-from mutagen.easyid3 import EasyID3
 import tkinter as tk
-import subprocess
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from utils.utils import clean_video_title, display_message, show_error_message
+from utils.utils import (
+    clean_video_title,
+    display_message,
+    show_error_message,
+    check_download_progress,
+)
 from ydl_opts.setup import get_ydl_opts
 
 
@@ -64,7 +65,9 @@ def download_single_video(
     try:
         # Extract video info
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)  # Extract info only, no download yet
+            info = ydl.extract_info(
+                link, download=False
+            )  # Extract info only, no download yet
             title = clean_video_title(info["title"])
 
             # Determine file extension based on download type
@@ -79,7 +82,9 @@ def download_single_video(
                     text_area,
                     download_type,
                 )
-                update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+                update_progress_bar(
+                    0, current_video, progress_var, progress_bar, progress_label, window
+                )
                 return
 
             # Check if title is already in downloaded_titles
@@ -90,7 +95,9 @@ def download_single_video(
                     text_area,
                     download_type,
                 )
-                update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+                update_progress_bar(
+                    0, current_video, progress_var, progress_bar, progress_label, window
+                )
                 return
 
             # Start download process
@@ -108,8 +115,6 @@ def download_single_video(
     except Exception as e:
         logging.error(f"Failed to download video {link}: {e}")
         display_message(f"Error: {e}", "", text_area, download_type)
-
-
 
 
 # Function to handle threaded playlist download
@@ -145,15 +150,6 @@ def download_playlist_threaded(
         error_message = f"An error has occurred: {str(e)}"
         logging.error(error_message)
         show_error_message(error_message)
-
-
-def check_download_progress(save_directory, text_area, window):
-    if os.listdir(save_directory):
-        display_message("Start downloading playlist!", "", text_area)
-    else:
-        window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window)
-        )
 
 
 # Function to download a single video in a separate thread
@@ -236,75 +232,3 @@ def start_download_playlist_threaded_inner(
         logging.error(error_message)
         display_message(error_message, "", text_area)
         show_error_message(error_message)
-
-
-# Metadata extraction and setting functions
-def extract_metadata(info_dict):
-    metadata = {
-        "Title": info_dict.get("title", ""),
-        "Length (seconds)": info_dict.get("duration", 0),
-        "Views": info_dict.get("view_count", 0),
-        "Age Restricted": info_dict.get("age_restricted", False),
-        "Rating": info_dict.get("average_rating", None),
-        "Description": info_dict.get("description", ""),
-        "Publish Date": info_dict.get("upload_date", ""),
-        "Author": info_dict.get("uploader", ""),
-    }
-    return metadata
-
-
-def set_mp3_metadata(file_path, metadata):
-    try:
-        audio = MP3(file_path, ID3=EasyID3)
-        audio["title"] = metadata["Title"]
-        audio["artist"] = metadata["Author"]
-        audio["album"] = metadata["Description"]
-        audio["date"] = metadata["Publish Date"]
-        audio["tracknumber"] = str(metadata["Length (seconds)"])
-        if metadata["Rating"] is not None:
-            audio["RATING"] = str(metadata["Rating"])
-        audio["VIEWS"] = str(metadata["Views"])
-        audio.save()
-        logging.info(f"Metadata set successfully for {file_path}")
-    except Exception as e:
-        error_message = f"Failed to set metadata for {file_path}: {str(e)}"
-        logging.error(error_message)
-        show_error_message(error_message)
-
-
-def set_mp4_metadata(file_path, metadata):
-    try:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Input file {file_path} not found")
-
-        ffmpeg_cmd = [
-            "ffmpeg",
-            "-i",
-            file_path,
-            "-c",
-            "copy",  # Avoid re-encoding
-            "-metadata",
-            f'title={metadata["Title"]}',
-            "-metadata",
-            f'artist={metadata["Author"]}',
-            "-metadata",
-            f'date={metadata["Publish Date"]}',
-            "-y",  # Overwrite output files without asking
-            f"{file_path}_temp.mp4",
-        ]
-
-        subprocess.run(ffmpeg_cmd, check=True)
-
-        os.remove(file_path)
-        os.rename(f"{file_path}_temp.mp4", file_path)
-        logging.info(f"Metadata set successfully for {file_path}")
-
-    except FileNotFoundError as fnf_error:
-        logging.error(fnf_error)
-        show_error_message(str(fnf_error))
-    except subprocess.CalledProcessError as cpe_error:
-        logging.error(f"FFmpeg failed to set metadata: {cpe_error}")
-        show_error_message(f"FFmpeg failed to set metadata: {cpe_error}")
-    except Exception as e:
-        logging.error(f"Failed to set metadata: {e}")
-        show_error_message(f"Failed to set metadata: {e}")
