@@ -35,7 +35,6 @@ def update_progress_bar(
     window.update_idletasks()
 
 
-# Function to handle the download of a single video
 def download_single_video(
     link,
     download_type,
@@ -63,15 +62,44 @@ def download_single_video(
     ydl_opts = get_ydl_opts(download_type, save_directory, on_progress)
 
     try:
+        # Extract video info
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
+            info = ydl.extract_info(link, download=False)  # Extract info only, no download yet
             title = clean_video_title(info["title"])
 
-            if title in downloaded_titles:
-                display_message("Skipping duplicate video", "", text_area)
+            # Determine file extension based on download type
+            file_extension = "mp3" if download_type == "MP3" else "mp4"
+            file_path = os.path.join(save_directory, f"{title}.{file_extension}")
+
+            # Check if file already exists on disk
+            if os.path.exists(file_path):
+                display_message(
+                    f"File already exists. Skipping download.",
+                    title,
+                    text_area,
+                    download_type,
+                )
+                update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
                 return
 
+            # Check if title is already in downloaded_titles
+            if title in downloaded_titles:
+                display_message(
+                    f"Video already downloaded in this session. Skipping.",
+                    title,
+                    text_area,
+                    download_type,
+                )
+                update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+                return
+
+            # Start download process
+            ydl.download([link])
+
+            # Add to downloaded_titles to avoid duplicate downloads in-session
             downloaded_titles.add(title)
+
+            # Display completion message
             display_message("Download completed!", title, text_area, download_type)
             update_progress_bar(
                 100, current_video, progress_var, progress_bar, progress_label, window
@@ -79,7 +107,9 @@ def download_single_video(
 
     except Exception as e:
         logging.error(f"Failed to download video {link}: {e}")
-        display_message(f"Error: {e}", "", text_area)
+        display_message(f"Error: {e}", "", text_area, download_type)
+
+
 
 
 # Function to handle threaded playlist download
