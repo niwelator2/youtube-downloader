@@ -117,41 +117,6 @@ def download_single_video(
         display_message(f"Error: {e}", "", text_area, download_type)
 
 
-# Function to handle threaded playlist download
-def download_playlist_threaded(
-    playlist_link,
-    download_type,
-    save_directory,
-    text_area,
-    progress_var,
-    progress_label,
-    progress_bar,
-    window,
-):
-    try:
-        playlist_download_thread = threading.Thread(
-            target=start_download_playlist_threaded_inner,
-            args=(
-                playlist_link,
-                download_type,
-                save_directory,
-                text_area,
-                progress_var,
-                progress_label,
-                progress_bar,
-                window,
-            ),
-        )
-        playlist_download_thread.start()
-        window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window)
-        )
-    except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
-        show_error_message(error_message)
-
-
 # Function to download a single video in a separate thread
 def download_single_video_threaded(
     link,
@@ -231,4 +196,39 @@ def start_download_playlist_threaded_inner(
         error_message = f"An error has occurred: {str(e)}"
         logging.error(error_message)
         display_message(error_message, "", text_area)
+        show_error_message(error_message)
+
+
+# Function to handle threaded playlist download
+def download_playlist_threaded(
+    playlist_link,
+    download_type,
+    save_directory,
+    text_area,
+    progress_var,
+    progress_label,
+    progress_bar,
+    window,
+):
+    try:
+        playlist_download_thread = threading.Thread(
+            target=start_download_playlist_threaded_inner,
+            args=(
+                playlist_link,
+                download_type,
+                save_directory,
+                text_area,
+                progress_var,
+                progress_label,
+                progress_bar,
+                window,
+            ),
+        )
+        playlist_download_thread.start()
+        window.after(
+            1000, lambda: check_download_progress(save_directory, text_area, window)
+        )
+    except Exception as e:
+        error_message = f"An error has occurred: {str(e)}"
+        logging.error(error_message)
         show_error_message(error_message)

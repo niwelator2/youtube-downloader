@@ -2,6 +2,8 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError, ID3FileType
 from mutagen.easyid3 import EasyID3
 import subprocess
+
+
 # Metadata extraction and setting functions
 def extract_metadata(info_dict):
     metadata = {
