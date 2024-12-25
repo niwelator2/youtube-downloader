@@ -1,4 +1,1 @@
-ERROR:root:An error has occurred: get_throttling_function_name: could not find match for multiple
-ERROR:root:An error has occurred: get_throttling_function_name: could not find match for multiple
-ERROR:root:An error has occurred: name 'clean_video_title' is not defined
-ERROR:root:An error has occurred: name 'clean_video_title' is not defined
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=s8BcdOk75A4: display_message() takes 3 positional arguments but 4 were given

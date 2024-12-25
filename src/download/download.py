@@ -10,6 +10,10 @@ import subprocess
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
+from utils.utils import clean_video_title, display_message, show_error_message
+from ydl_opts.setup import get_ydl_opts
+
+
 # Set up logging
 logging.basicConfig(filename="download.log", level=logging.INFO)
 
@@ -17,27 +21,8 @@ logging.basicConfig(filename="download.log", level=logging.INFO)
 update_interval = 1
 
 # Create queues for message and download management
-message_queue = queue.Queue()
+
 download_queue = queue.Queue()
-
-
-# Function to display messages in the UI
-def display_message(message, video_title, text_area):
-    message_queue.put((message, video_title))
-    threading.Thread(target=display_messages_from_queue, args=(text_area,)).start()
-
-
-def display_messages_from_queue(text_area):
-    while not message_queue.empty():
-        message, video_title = message_queue.get()
-        title = "System message"
-        if video_title:
-            title = video_title
-        text_area.config(state=tk.NORMAL)
-        text_area.insert(tk.END, f"{title}: {message}\n")
-        text_area.see(tk.END)
-        text_area.config(state=tk.DISABLED)
-        message_queue.task_done()
 
 
 # Function to update the progress bar in the UI
@@ -64,72 +49,37 @@ def download_single_video(
     window,
 ):
     def on_progress(d):
-        if d["status"] == "downloading":
-            percent = d["downloaded_bytes"] / d["total_bytes"] * 100
-            progress_var.set(percent)
-            progress_bar.update()
-            progress_label.config(text=f"Downloading {current_video}: {percent:.2f}%")
-            window.update_idletasks()
+        if d["status"] == "downloading" and d.get("total_bytes"):
+            percent = (d["downloaded_bytes"] / d["total_bytes"]) * 100
+            update_progress_bar(
+                percent,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
+            )
 
-    ydl_opts = {
-        "outtmpl": os.path.join(save_directory, "%(title)s.%(ext)s"),
-        "progress_hooks": [on_progress],
-        "format": (
-            "bestaudio/best" if download_type == "MP3" else "bestvideo+bestaudio/best"
-        ),
-        "noplaylist": True,
-    }
+    ydl_opts = get_ydl_opts(download_type, save_directory, on_progress)
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(link, download=True)
-            video_title = clean_video_title(info_dict["title"])
+            info = ydl.extract_info(link, download=True)
+            title = clean_video_title(info["title"])
 
-            if video_title in downloaded_titles:
+            if title in downloaded_titles:
                 display_message("Skipping duplicate video", "", text_area)
                 return
 
-            downloaded_titles.add(video_title)
-
-            # Handle MP3 metadata
-            if download_type == "MP3":
-                audio_file_path = os.path.join(save_directory, f"{video_title}.mp3")
-                if os.path.exists(audio_file_path):
-                    display_message(
-                        f"Audio already exists. Skipping", f"{video_title}", text_area
-                    )
-                    return
-
-                metadata = extract_metadata(info_dict)
-                set_mp3_metadata(audio_file_path, metadata)
-
-            # Handle MP4 metadata
-            elif download_type == "MP4":
-                video_file_path = os.path.join(save_directory, f"{video_title}.mp4")
-                if os.path.exists(video_file_path):
-                    display_message(
-                        f"Video already exists.", f"{video_title}", text_area
-                    )
-                    return
-
-                metadata = extract_metadata(info_dict)
-                set_mp4_metadata(video_file_path, metadata)
-
-            else:
-                display_message(
-                    "Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area
-                )
-                show_error_message("Invalid download type. Choose 'MP4' or 'MP3'.")
-                return
-
-            display_message("Download completed!", f"{video_title}", text_area)
+            downloaded_titles.add(title)
+            display_message("Download completed!", title, text_area, download_type)
             update_progress_bar(
                 100, current_video, progress_var, progress_bar, progress_label, window
             )
 
     except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
+        logging.error(f"Failed to download video {link}: {e}")
+        display_message(f"Error: {e}", "", text_area)
 
 
 # Function to handle threaded playlist download
