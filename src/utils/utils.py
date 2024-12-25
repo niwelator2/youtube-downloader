@@ -83,8 +83,9 @@ def display_messages_from_queue(text_area):
 
 
 def check_download_progress(save_directory, text_area, window):
+    download_type = message_queue.get()
     if os.listdir(save_directory):
-        display_message("Start downloading playlist!", "", text_area)
+        display_message("Start downloading playlist!", download_type, text_area)
     else:
         window.after(
             1000, lambda: check_download_progress(save_directory, text_area, window)

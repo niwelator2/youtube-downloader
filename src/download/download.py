@@ -5,7 +5,7 @@ from yt_dlp import YoutubeDL
 import tkinter as tk
 import logging
 from concurrent.futures import ThreadPoolExecutor
-
+from pytube import Playlist
 from utils.utils import (
     clean_video_title,
     display_message,
@@ -153,7 +153,7 @@ def download_single_video_threaded(
 
 
 # Function to download a playlist using a thread pool
-def start_download_playlist_threaded_inner(
+def start_download_playlist_threaded(
     playlist_link,
     download_type,
     save_directory,
@@ -164,38 +164,61 @@ def start_download_playlist_threaded_inner(
     window,
 ):
     try:
+        # Initialize playlist and progress tracking
         playlist = Playlist(playlist_link)
-        total_videos = len(playlist.video_urls)
-        downloaded_titles = set()
+        video_urls = playlist.video_urls
+        total_videos = len(video_urls)
+        downloaded_titles = set()  # Set to track downloaded titles in-session
+        completed_count = 0  # Track completed downloads
 
+        # Update UI to notify the start of the playlist download
+        display_message(f"Starting playlist download: {total_videos} videos.", "", text_area, download_type)
+
+        # Function to handle individual video download and progress updates
+        def download_and_update(video_url, current_video):
+            nonlocal completed_count
+            download_single_video(
+                link=video_url,
+                download_type=download_type,
+                save_directory=save_directory,
+                current_video=current_video,
+                downloaded_titles=downloaded_titles,
+                text_area=text_area,
+                progress_var=progress_var,
+                progress_bar=progress_bar,
+                progress_label=progress_label,
+                window=window,
+            )
+            # Increment and update progress for the playlist
+            completed_count += 1
+            playlist_progress = (completed_count / total_videos) * 100
+            progress_var.set(playlist_progress)
+            progress_label.config(text=f"Playlist Progress: {playlist_progress:.2f}% ({completed_count}/{total_videos})")
+            progress_bar["value"] = playlist_progress
+            window.update_idletasks()
+
+        # Use a ThreadPoolExecutor to download videos in parallel
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [
-                executor.submit(
-                    download_single_video_threaded,
-                    video_url,
-                    download_type,
-                    save_directory,
-                    current_video,
-                    text_area,
-                    progress_var,
-                    progress_bar,
-                    progress_label,
-                    window,
-                )
-                for current_video, video_url in enumerate(playlist.video_urls, 1)
-            ]
+            futures = {
+                executor.submit(download_and_update, video_url, idx): video_url
+                for idx, video_url in enumerate(video_urls, 1)
+            }
             for future in futures:
                 try:
                     future.result()
                 except Exception as e:
-                    display_message(f"Error in downloading: {str(e)}", "", text_area)
+                    video_url = futures[future]
+                    logging.error(f"Error downloading video {video_url}: {e}")
+                    display_message(f"Error downloading video {video_url}: {e}", "", text_area, download_type)
 
-        display_message("Playlist download completed!", "", text_area)
+        # Notify user of completion
+        display_message("Playlist download completed!", "", text_area, download_type)
 
     except Exception as e:
+        # Log and display errors
         error_message = f"An error has occurred: {str(e)}"
         logging.error(error_message)
-        display_message(error_message, "", text_area)
+        display_message(error_message, "", text_area, download_type)
         show_error_message(error_message)
 
 
@@ -212,7 +235,7 @@ def download_playlist_threaded(
 ):
     try:
         playlist_download_thread = threading.Thread(
-            target=start_download_playlist_threaded_inner,
+            target=start_download_playlist_threaded,
             args=(
                 playlist_link,
                 download_type,
