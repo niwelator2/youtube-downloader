@@ -3,10 +3,11 @@ from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, ID3NoHeaderError, COMM
 from mutagen.mp4 import MP4, MP4Cover
+import requests
 
-# Function to save metadata to the downloaded file
+# Function to save metadata to the downloaded file and print to console
 def save_metadata(file_path, info, download_type):
-    metadata_json = json.dumps({
+    metadata = {
         "title": info["title"],
         "uploader": info["uploader"],
         "album": info.get("album", ""),
@@ -14,7 +15,13 @@ def save_metadata(file_path, info, download_type):
         "upload_date": info.get("upload_date", ""),
         "description": info.get("description", ""),
         "thumbnail": info.get("thumbnail", "")
-    })
+    }
+    
+    metadata_json = json.dumps(metadata, indent=4)
+    
+    # Print metadata to console
+    print(f"Metadata for {file_path}:")
+    print(metadata_json)
 
     if download_type == "MP3":
         try:
@@ -33,7 +40,7 @@ def save_metadata(file_path, info, download_type):
         audio["album"] = info.get("album", "")
         audio["genre"] = info.get("genre", "")
         audio["date"] = info.get("upload_date", "")
-        audio["comment"] = metadata_json  # Embed metadata JSON in comment tag
+        audio["description"] = metadata_json  # Embed metadata JSON in comment tag
         audio.save()
 
     elif download_type == "MP4":
