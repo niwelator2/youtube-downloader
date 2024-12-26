@@ -1,6 +1,8 @@
 import os
 import threading
 import queue
+import time
+from utils.utils import clean_video_title
 from yt_dlp import YoutubeDL
 import tkinter as tk
 import logging
@@ -138,7 +140,7 @@ def download_single_video_threaded(
     window,
 ):
     try:
-        download_thread = threading.Thread(
+        threading.Thread(
             target=download_single_video,
             args=(
                 link,
@@ -152,12 +154,10 @@ def download_single_video_threaded(
                 progress_label,
                 window,
             ),
-        )
-        download_thread.start()
+        ).start()
     except Exception as e:
-        error_message = f"An error has occurred: {str(e)}"
-        logging.error(error_message)
-        show_error_message(error_message)
+        logging.error(f"An error has occurred: {str(e)}")
+        display_message(f"An error has occurred: {str(e)}", "", text_area)
 
 
 # Function to download a playlist using a thread pool

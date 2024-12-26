@@ -7,3 +7,5 @@ dist/
 .last_directory
 setup.iss
 __pycache__
+download.log
+Youtube-Downloader.exe
