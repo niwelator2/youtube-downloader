@@ -37,6 +37,7 @@ def update_progress_bar(
     window.update_idletasks()
 
 
+# Function to download a single video
 def download_single_video(
     link,
     download_type,
@@ -64,6 +65,10 @@ def download_single_video(
     ydl_opts = get_ydl_opts(download_type, save_directory, on_progress)
 
     try:
+        # Ensure the save directory exists
+        if not os.path.exists(save_directory):
+            os.makedirs(save_directory)
+
         # Extract video info
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
@@ -107,7 +112,7 @@ def download_single_video(
             # Add to downloaded_titles to avoid duplicate downloads in-session
             downloaded_titles.add(title)
 
-            #save metadata to the file
+            # Save metadata to the file
             save_metadata(file_path, info, download_type)
 
             # Display completion message
@@ -119,7 +124,6 @@ def download_single_video(
     except Exception as e:
         logging.error(f"Failed to download video {link}: {e}")
         display_message(f"Error: {e}", "", text_area, download_type)
-
 
 # Function to download a single video in a separate thread
 def download_single_video_threaded(
