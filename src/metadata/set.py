@@ -20,8 +20,8 @@ def save_metadata(file_path, info, download_type):
     metadata_json = json.dumps(metadata, indent=4)
     
     # Print metadata to console
-    print(f"Metadata for {file_path}:")
-    print(metadata_json)
+    #print(f"Metadata for {file_path}:")
+    #print(metadata_json)
 
     if download_type == "MP3":
         try:
@@ -40,7 +40,6 @@ def save_metadata(file_path, info, download_type):
         audio["album"] = info.get("album", "")
         audio["genre"] = info.get("genre", "")
         audio["date"] = info.get("upload_date", "")
-        audio["description"] = metadata_json  # Embed metadata JSON in comment tag
         audio.save()
 
     elif download_type == "MP4":

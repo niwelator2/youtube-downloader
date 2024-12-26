@@ -7,3 +7,4 @@ ERROR:root:Failed to download video https://www.youtube.com/watch?v=Sclv4G2llqI:
 ERROR:root:Failed to download video https://www.youtube.com/watch?v=Sclv4G2llqI: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\Abandon Hope - Subnautica Call of the Void OST.mp3'
 ERROR:root:Failed to download video https://www.youtube.com/watch?v=Sclv4G2llqI: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\Abandon Hope - Subnautica Call of the Void OST.mp3'
 ERROR:root:Failed to download video https://www.youtube.com/watch?v=nf30qQzw7rk: "'comment' is not a valid key"
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=nf30qQzw7rk: "'description' is not a valid key"
