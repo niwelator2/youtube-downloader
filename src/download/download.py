@@ -6,6 +6,7 @@ import tkinter as tk
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from pytube import Playlist
+from metadata.set import save_metadata
 from utils.utils import (
     clean_video_title,
     display_message,
@@ -106,6 +107,9 @@ def download_single_video(
             # Add to downloaded_titles to avoid duplicate downloads in-session
             downloaded_titles.add(title)
 
+            #save metadata to the file
+            save_metadata(file_path, info, download_type)
+
             # Display completion message
             display_message("Download completed!", title, text_area, download_type)
             update_progress_bar(
@@ -172,7 +176,12 @@ def start_download_playlist_threaded(
         completed_count = 0  # Track completed downloads
 
         # Update UI to notify the start of the playlist download
-        display_message(f"Starting playlist download: {total_videos} videos.", "", text_area, download_type)
+        display_message(
+            f"Starting playlist download: {total_videos} videos.",
+            "",
+            text_area,
+            download_type,
+        )
 
         # Function to handle individual video download and progress updates
         def download_and_update(video_url, current_video):
@@ -193,7 +202,9 @@ def start_download_playlist_threaded(
             completed_count += 1
             playlist_progress = (completed_count / total_videos) * 100
             progress_var.set(playlist_progress)
-            progress_label.config(text=f"Playlist Progress: {playlist_progress:.2f}% ({completed_count}/{total_videos})")
+            progress_label.config(
+                text=f"Playlist Progress: {playlist_progress:.2f}% ({completed_count}/{total_videos})"
+            )
             progress_bar["value"] = playlist_progress
             window.update_idletasks()
 
@@ -209,7 +220,12 @@ def start_download_playlist_threaded(
                 except Exception as e:
                     video_url = futures[future]
                     logging.error(f"Error downloading video {video_url}: {e}")
-                    display_message(f"Error downloading video {video_url}: {e}", "", text_area, download_type)
+                    display_message(
+                        f"Error downloading video {video_url}: {e}",
+                        "",
+                        text_area,
+                        download_type,
+                    )
 
         # Notify user of completion
         display_message("Playlist download completed!", "", text_area, download_type)
@@ -249,7 +265,7 @@ def download_playlist_threaded(
         )
         playlist_download_thread.start()
         window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window)
+            1000, lambda: check_download_progress(save_directory, text_area, window,download_type)
         )
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"

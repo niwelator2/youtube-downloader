@@ -1,1 +1,1 @@
-ERROR:root:Failed to download video https://www.youtube.com/watch?v=s8BcdOk75A4: display_message() takes 3 positional arguments but 4 were given
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=s8BcdOk75A4: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\Creature Attack - Subnautica Call of the Void OST.mp4'
