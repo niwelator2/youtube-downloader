@@ -2,7 +2,7 @@ import os
 import threading
 import queue
 import time
-from utils.utils import clean_video_title
+from utils.utils import clean_video_title, save_thumbnail
 from yt_dlp import YoutubeDL
 import tkinter as tk
 import logging
@@ -41,27 +41,14 @@ def update_progress_bar(
 
 # Function to download a single video
 def download_single_video(
-    link,
-    download_type,
-    save_directory,
-    current_video,
-    downloaded_titles,
-    text_area,
-    progress_var,
-    progress_bar,
-    progress_label,
-    window,
+    link, download_type, save_directory, current_video, downloaded_titles, text_area,
+    progress_var, progress_bar, progress_label, window
 ):
     def on_progress(d):
         if d["status"] == "downloading" and d.get("total_bytes"):
             percent = (d["downloaded_bytes"] / d["total_bytes"]) * 100
             update_progress_bar(
-                percent,
-                current_video,
-                progress_var,
-                progress_bar,
-                progress_label,
-                window,
+                percent, current_video, progress_var, progress_bar, progress_label, window
             )
 
     ydl_opts = get_ydl_opts(download_type, save_directory, on_progress)
@@ -73,59 +60,49 @@ def download_single_video(
 
         # Extract video info
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(
-                link, download=False
-            )  # Extract info only, no download yet
-            title = clean_video_title(info["title"])
+            info = ydl.extract_info(link, download=False)  # Extract info only, no download yet
 
-            # Determine file extension based on download type
-            file_extension = "mp3" if download_type == "MP3" else "mp4"
-            file_path = os.path.join(save_directory, f"{title}.{file_extension}")
+        title = clean_video_title(info["title"])
+        thumb_url = info.get("thumbnail")  # Get the thumbnail URL
+        thumbnail_path = save_thumbnail(thumb_url, save_directory, title)  # Save the thumbnail image
 
-            # Check if file already exists on disk
-            if os.path.exists(file_path):
-                display_message(
-                    f"File already exists. Skipping download.",
-                    title,
-                    text_area,
-                    download_type,
-                )
-                update_progress_bar(
-                    0, current_video, progress_var, progress_bar, progress_label, window
-                )
-                return
+        # Determine file extension based on download type
+        file_extension = "mp3" if download_type == "MP3" else "mp4"
+        file_path = os.path.join(save_directory, f"{title}.{file_extension}")
 
-            # Check if title is already in downloaded_titles
-            if title in downloaded_titles:
-                display_message(
-                    f"Video already downloaded in this session. Skipping.",
-                    title,
-                    text_area,
-                    download_type,
-                )
-                update_progress_bar(
-                    0, current_video, progress_var, progress_bar, progress_label, window
-                )
-                return
-
-            # Start download process
-            ydl.download([link])
-
-            # Add to downloaded_titles to avoid duplicate downloads in-session
-            downloaded_titles.add(title)
-
-            # Save metadata to the file
-            save_metadata(file_path, info, download_type)
-
-            # Display completion message
-            display_message("Download completed!", title, text_area, download_type)
-            update_progress_bar(
-                100, current_video, progress_var, progress_bar, progress_label, window
+        # Check if file already exists on disk
+        if os.path.exists(file_path):
+            display_message(
+                f"File already exists. Skipping download.", title, text_area, download_type,
             )
+            update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+            return
+
+        # Check if title is already in downloaded_titles
+        if title in downloaded_titles:
+            display_message(
+                f"Video already downloaded in this session. Skipping.", title, text_area, download_type,
+            )
+            update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+            return
+
+        # Start download process
+        ydl.download([link])
+
+        # Add to downloaded_titles to avoid duplicate downloads in-session
+        downloaded_titles.add(title)
+
+        # Save metadata to the file
+        save_metadata(file_path, info, download_type)  # Remove the thumbnail_path argument
+
+        # Display completion message
+        display_message("Download completed!", title, text_area, download_type)
+        update_progress_bar(100, current_video, progress_var, progress_bar, progress_label, window)
 
     except Exception as e:
         logging.error(f"Failed to download video {link}: {e}")
         display_message(f"Error: {e}", "", text_area, download_type)
+
 
 # Function to download a single video in a separate thread
 def download_single_video_threaded(
@@ -269,7 +246,7 @@ def download_playlist_threaded(
         )
         playlist_download_thread.start()
         window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window,download_type)
+            1000, lambda: check_download_progress(save_directory, text_area, window)
         )
     except Exception as e:
         error_message = f"An error has occurred: {str(e)}"

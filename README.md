@@ -39,7 +39,7 @@ cd windows/
 ## Build with console window
 
 ```bash
-    pyinstaller --onefile --distpath=../windows --icon=../src/gui/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. main.py --add-data "gui/:gui" --add-data "utils/:utils" --add-data "download/:download"
+    pyinstaller --onefile --distpath=../windows --icon=../src/gui/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. main.py --add-data "gui/:gui" --add-data "utils/:utils" --add-data "download/:download" --clean
 ```
 
 ## Credits

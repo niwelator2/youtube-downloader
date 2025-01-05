@@ -1,0 +1,9 @@
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=PoVgCOCt4KA: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\Oliver Tree - Alien Boy  lyrics.mp3'
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=RXWYDeGhe24: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\Post Malone, Swae Lee - Sunflower (Lyrics) (Spider-Man Into the Spider-Verse).mp3'
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=PjCmqWzXH_0: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music/subntaica2\\MASE - Psycho! (Lyrics) i might just go psycho.mp3'
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=sBl3EpUqAjE: [Errno 2] No such file or directory: "C:/Users/Pilif/Music/subntaica2\\Melanie Martinez - Play Date (Lyrics)  i guess i'm just a playdate to you.mp3"
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=lYoWuaw5nSk: save_metadata() takes 3 positional arguments but 4 were given
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=lYoWuaw5nSk: save_metadata() takes 3 positional arguments but 4 were given
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'

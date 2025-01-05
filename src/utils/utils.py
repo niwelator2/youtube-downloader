@@ -7,6 +7,8 @@ from tkinter import filedialog, messagebox
 import tkinter as tk
 import re
 
+import requests
+
 message_queue = queue.Queue()
 
 
@@ -85,8 +87,27 @@ def display_messages_from_queue(text_area):
 def check_download_progress(save_directory, text_area, window):
     download_type = message_queue.get()
     if os.listdir(save_directory):
-        display_message("Start downloading playlist!", download_type, text_area)
+        display_message("Start downloading playlist!", text_area, download_type,)
     else:
         window.after(
             1000, lambda: check_download_progress(save_directory, text_area, window)
         )
+
+
+def save_thumbnail(thumb_url, save_directory, title):
+    try:
+        # Get the thumbnail image data
+        response = requests.get(thumb_url)
+        response.raise_for_status()
+
+        # Construct the file path
+        thumbnail_path = os.path.join(save_directory, f"{title}_thumbnail.jpg")
+
+        # Save the thumbnail to a file
+        with open(thumbnail_path, "wb") as f:
+            f.write(response.content)
+
+        return thumbnail_path
+    except Exception as e:
+        logging.error(f"Failed to download thumbnail for {title}: {e}")
+        return None
