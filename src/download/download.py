@@ -16,7 +16,7 @@ from utils.utils import (
     check_download_progress,
 )
 from ydl_opts.setup import get_ydl_opts
-
+from functools import partial
 
 # Set up logging
 logging.basicConfig(filename="download.log", level=logging.INFO)
@@ -41,14 +41,27 @@ def update_progress_bar(
 
 # Function to download a single video
 def download_single_video(
-    link, download_type, save_directory, current_video, downloaded_titles, text_area,
-    progress_var, progress_bar, progress_label, window
+    link,
+    download_type,
+    save_directory,
+    current_video,
+    downloaded_titles,
+    text_area,
+    progress_var,
+    progress_bar,
+    progress_label,
+    window,
 ):
     def on_progress(d):
         if d["status"] == "downloading" and d.get("total_bytes"):
             percent = (d["downloaded_bytes"] / d["total_bytes"]) * 100
             update_progress_bar(
-                percent, current_video, progress_var, progress_bar, progress_label, window
+                percent,
+                current_video,
+                progress_var,
+                progress_bar,
+                progress_label,
+                window,
             )
 
     ydl_opts = get_ydl_opts(download_type, save_directory, on_progress)
@@ -60,11 +73,15 @@ def download_single_video(
 
         # Extract video info
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)  # Extract info only, no download yet
+            info = ydl.extract_info(
+                link, download=False
+            )  # Extract info only, no download yet
 
         title = clean_video_title(info["title"])
         thumb_url = info.get("thumbnail")  # Get the thumbnail URL
-        thumbnail_path = save_thumbnail(thumb_url, save_directory, title)  # Save the thumbnail image
+        thumbnail_path = save_thumbnail(
+            thumb_url, save_directory, title
+        )  # Save the thumbnail image
 
         # Determine file extension based on download type
         file_extension = "mp3" if download_type == "MP3" else "mp4"
@@ -73,17 +90,27 @@ def download_single_video(
         # Check if file already exists on disk
         if os.path.exists(file_path):
             display_message(
-                f"File already exists. Skipping download.", title, text_area, download_type,
+                f"File already exists. Skipping download.",
+                title,
+                text_area,
+                download_type,
             )
-            update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+            update_progress_bar(
+                0, current_video, progress_var, progress_bar, progress_label, window
+            )
             return
 
         # Check if title is already in downloaded_titles
         if title in downloaded_titles:
             display_message(
-                f"Video already downloaded in this session. Skipping.", title, text_area, download_type,
+                f"Video already downloaded in this session. Skipping.",
+                title,
+                text_area,
+                download_type,
             )
-            update_progress_bar(0, current_video, progress_var, progress_bar, progress_label, window)
+            update_progress_bar(
+                0, current_video, progress_var, progress_bar, progress_label, window
+            )
             return
 
         # Start download process
@@ -93,11 +120,15 @@ def download_single_video(
         downloaded_titles.add(title)
 
         # Save metadata to the file
-        save_metadata(file_path, info, download_type)  # Remove the thumbnail_path argument
+        save_metadata(
+            file_path, info, download_type
+        )  # Remove the thumbnail_path argument
 
         # Display completion message
         display_message("Download completed!", title, text_area, download_type)
-        update_progress_bar(100, current_video, progress_var, progress_bar, progress_label, window)
+        update_progress_bar(
+            100, current_video, progress_var, progress_bar, progress_label, window
+        )
 
     except Exception as e:
         logging.error(f"Failed to download video {link}: {e}")
@@ -150,9 +181,16 @@ def start_download_playlist_threaded(
 ):
     try:
         # Initialize playlist and progress tracking
-        playlist = Playlist(playlist_link)
-        video_urls = playlist.video_urls
+        try:
+            playlist = Playlist(playlist_link)
+            video_urls = playlist.video_urls
+        except Exception as e:
+            raise ValueError(f"Invalid playlist URL or inaccessible: {e}")
+
         total_videos = len(video_urls)
+        if total_videos == 0:
+            raise ValueError("No videos found in the playlist.")
+
         downloaded_titles = set()  # Set to track downloaded titles in-session
         completed_count = 0  # Track completed downloads
 
@@ -164,22 +202,9 @@ def start_download_playlist_threaded(
             download_type,
         )
 
-        # Function to handle individual video download and progress updates
-        def download_and_update(video_url, current_video):
+        # Thread-safe function to update playlist progress
+        def update_playlist_progress():
             nonlocal completed_count
-            download_single_video(
-                link=video_url,
-                download_type=download_type,
-                save_directory=save_directory,
-                current_video=current_video,
-                downloaded_titles=downloaded_titles,
-                text_area=text_area,
-                progress_var=progress_var,
-                progress_bar=progress_bar,
-                progress_label=progress_label,
-                window=window,
-            )
-            # Increment and update progress for the playlist
             completed_count += 1
             playlist_progress = (completed_count / total_videos) * 100
             progress_var.set(playlist_progress)
@@ -189,24 +214,37 @@ def start_download_playlist_threaded(
             progress_bar["value"] = playlist_progress
             window.update_idletasks()
 
+        # Function to handle individual video download and progress updates
+        def download_and_update(video_url, current_video):
+            try:
+                download_single_video(
+                    link=video_url,
+                    download_type=download_type,
+                    save_directory=save_directory,
+                    current_video=current_video,
+                    downloaded_titles=downloaded_titles,
+                    text_area=text_area,
+                    progress_var=progress_var,
+                    progress_bar=progress_bar,
+                    progress_label=progress_label,
+                    window=window,
+                )
+            except Exception as e:
+                logging.error(f"Error downloading video {video_url}: {e}")
+                display_message(
+                    f"Error downloading video {video_url}: {e}",
+                    "",
+                    text_area,
+                    download_type,
+                )
+            finally:
+                # Update playlist progress regardless of success or failure
+                window.after(0, update_playlist_progress)
+
         # Use a ThreadPoolExecutor to download videos in parallel
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {
-                executor.submit(download_and_update, video_url, idx): video_url
-                for idx, video_url in enumerate(video_urls, 1)
-            }
-            for future in futures:
-                try:
-                    future.result()
-                except Exception as e:
-                    video_url = futures[future]
-                    logging.error(f"Error downloading video {video_url}: {e}")
-                    display_message(
-                        f"Error downloading video {video_url}: {e}",
-                        "",
-                        text_area,
-                        download_type,
-                    )
+            for idx, video_url in enumerate(video_urls, 1):
+                executor.submit(partial(download_and_update, video_url, idx))
 
         # Notify user of completion
         display_message("Playlist download completed!", "", text_area, download_type)
@@ -243,8 +281,11 @@ def download_playlist_threaded(
                 progress_bar,
                 window,
             ),
+            daemon=True,  # Ensure the thread doesn't block program exit
         )
         playlist_download_thread.start()
+
+        # Check download progress periodically
         window.after(
             1000, lambda: check_download_progress(save_directory, text_area, window)
         )

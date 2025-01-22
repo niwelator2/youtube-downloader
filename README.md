@@ -33,7 +33,7 @@ cd windows/
  python -m venv venv
  pip install -r requirements.txt
  cd src/
- pyinstaller --onefile --distpath=../windows --icon=../src/gui/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py --add-data "gui/:gui" --add-data "utils/:utils" --add-data "download/:download" 
+ pyinstaller --onefile --distpath=../windows --icon=../src/gui/icon/logo.ico --name=Youtube-Downloader -y -F --additional-hooks-dir=. --noconsole main.py --add-data "gui/:gui" --add-data "utils/:utils" --add-data "download/:download" --clean
 ```
 
 ## Build with console window

@@ -5,6 +5,7 @@ from mutagen.id3 import ID3, ID3NoHeaderError, APIC
 from mutagen.mp4 import MP4, MP4Cover
 import requests
 
+
 def save_metadata(file_path, info, download_type):
     metadata = {
         "title": info["title"],
@@ -15,7 +16,7 @@ def save_metadata(file_path, info, download_type):
         "description": info.get("description", ""),
         "thumbnail": info.get("thumbnail", ""),
     }
-    
+
     metadata_json = json.dumps(metadata, indent=4)
 
     # MP3 Handling
@@ -48,10 +49,10 @@ def save_metadata(file_path, info, download_type):
                 # Create APIC frame for cover art and add it to the tags
                 apic = APIC(
                     encoding=3,  # UTF-8 encoding
-                    mime='image/jpeg',  # MIME type for the image (JPEG)
+                    mime="image/jpeg",  # MIME type for the image (JPEG)
                     type=3,  # Front cover
-                    desc=u'Cover',
-                    data=cover_data
+                    desc="Cover",
+                    data=cover_data,
                 )
 
                 # Add the APIC frame (cover art) to the ID3 tags
@@ -70,12 +71,12 @@ def save_metadata(file_path, info, download_type):
         video["\xa9gen"] = info.get("genre", "")
         video["\xa9day"] = info.get("upload_date", "")
         video["desc"] = info.get("description", "")
-        
+
         # Add cover art if available
         if "thumbnail" in info:
             cover_data = requests.get(info["thumbnail"]).content
             video["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-        
+
         # Embed metadata JSON as a custom tag
         video["\xa9cmt"] = metadata_json
         video.save()

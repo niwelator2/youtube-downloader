@@ -7,3 +7,17 @@ INFO:pytube.contrib.playlist:'onResponseReceivedActions'
 ERROR:root:Failed to download video https://www.youtube.com/watch?v=lYoWuaw5nSk: save_metadata() takes 3 positional arguments but 4 were given
 ERROR:root:Failed to download video https://www.youtube.com/watch?v=lYoWuaw5nSk: save_metadata() takes 3 positional arguments but 4 were given
 INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+ERROR:root:Failed to download video https://music.youtube.com/watch?v=9rpq7eydZmw&list=RDAMVM9rpq7eydZmw: [Errno 2] No such file or directory: "C:/Users/Pilif/Music\\Assassin's Creed Mirage (Epic Theme).mp3"
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+INFO:pytube.contrib.playlist:'onResponseReceivedActions'
+ERROR:root:Failed to download video https://music.youtube.com/watch?v=bpOSxM0rNPM: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music\\Arctic Monkeys - Do I Wanna Know (Official Video).mp3'
+ERROR:root:Failed to download video https://music.youtube.com/watch?v=0GEX_sVwUn4&list=RDAMVM0GEX_sVwUn4: [0;31mERROR:[0m Unable to rename file: [WinError 2] Nie mo¿na odnaleŸæ okreœlonego pliku: 'C:\\Users\\Pilif\\Music\\Nightcore - How Do You Do.webm.part' -> 'C:\\Users\\Pilif\\Music\\Nightcore - How Do You Do.webm'
+ERROR:root:An error has occurred: 'list'
+ERROR:root:An error has occurred: 'list'
+ERROR:root:Failed to download video https://music.youtube.com/watch?v=3vnuWR8Qx1U&list=RDAMVM3vnuWR8Qx1U: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music\\Star Wars Republic Commando EPIC GAMING MUSIC MIX (Vode An, War Chant, Halo Theme, & MORE!).mp3'
+ERROR:root:Failed to download video https://www.youtube.com/watch?v=tXod36WPayc: [Errno 2] No such file or directory: "C:/Users/Pilif/Music\\Don't You Know What the Night Can Do.mp3"
+ERROR:root:Failed to download video https://music.youtube.com/watch?v=3vnuWR8Qx1U&list=RDAMVM3vnuWR8Qx1U: [Errno 2] No such file or directory: 'C:/Users/Pilif/Music\\Star Wars Republic Commando EPIC GAMING MUSIC MIX (Vode An, War Chant, Halo Theme, & MORE!).mp3'
