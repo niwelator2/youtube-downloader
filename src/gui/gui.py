@@ -90,6 +90,7 @@ def setup_gui():
             download_type_var.get(),
             save_directory_entry.get(),
             1,
+            downloaded_titles,
             text_area,
             progress_var,
             progress_bar,
