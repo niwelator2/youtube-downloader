@@ -1,21 +1,20 @@
 # utils/utils.py
-import logging
 import os
-import queue
-import threading
 from tkinter import filedialog, messagebox
 import tkinter as tk
 import re
 
-message_queue = queue.Queue()
-
 
 def select_save_directory(entry_widget, initial_dir=None):
     directory = filedialog.askdirectory(initialdir=initial_dir)
-    if directory:
+    if directory and os.path.isdir(directory):  # Validate directory
         entry_widget.delete(0, tk.END)
         entry_widget.insert(0, directory)
         set_last_directory(directory)
+        return directory
+    else:
+        show_error_message("Invalid directory. Please select a valid location.")
+        return None
 
 
 def set_last_directory(directory):
@@ -40,53 +39,10 @@ def clean_video_title(title):
     return re.sub(r'[<>:"/\\|?*]', "", title).strip()
 
 
-class UILogHandler(logging.Handler):
-    def __init__(self, text_area):
-        super().__init__()
-        self.text_area = text_area
-
-    def emit(self, record):
-        log_message = self.format(record)
-        self.text_area.config(state=tk.NORMAL)
-        self.text_area.insert(tk.END, log_message + "\n")
-        self.text_area.see(tk.END)
-        self.text_area.config(state=tk.DISABLED)
-
-
-# Configure logging to send output to the UI
-def setup_ui_logger(text_area):
-    handler = UILogHandler(text_area)
-    handler.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logging.getLogger().addHandler(handler)
-    logging.getLogger().setLevel(logging.INFO)
-
-
-# Function to display messages in the UI
-def display_message(message, video_title, text_area, download_type):
-    message_queue.put((message, video_title, download_type))
-    threading.Thread(target=display_messages_from_queue, args=(text_area,)).start()
-
-
-def display_messages_from_queue(text_area):
-    while not message_queue.empty():
-        message, video_title, download_type = message_queue.get()
-        title = "System message"
-        if video_title:
-            title = f"{video_title} ({download_type})"
-        text_area.config(state=tk.NORMAL)
-        text_area.insert(tk.END, f"{title}: {message}\n")
-        text_area.see(tk.END)
-        text_area.config(state=tk.DISABLED)
-        message_queue.task_done()
-
-
-def check_download_progress(save_directory, text_area, window):
-    download_type = message_queue.get()
-    if os.listdir(save_directory):
-        display_message("Start downloading playlist!", download_type, text_area)
-    else:
-        window.after(
-            1000, lambda: check_download_progress(save_directory, text_area, window)
+def on_progress(progress):
+    if progress["status"] == "downloading":
+        print(
+            f"Downloading: {progress['_percent_str']} | Speed: {progress['_speed_str']} | ETA: {progress['eta']}s"
         )
+    elif progress["status"] == "finished":
+        print(f"Download complete: {progress['filename']}")
