@@ -73,14 +73,6 @@ def download_single_video(
     progress_label,
     window,
 ):
-    if download_type == "MP3":
-        ydl_opts = get_ydl_opts_single_mp3
-    elif download_type == "MP4":
-        ydl_opts = get_ydl_opts_single_mp4
-    else:
-        display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
-        return
-
     def on_progress_hook(d):
         if d["status"] == "downloading" and d.get("total_bytes"):
             percent = d["downloaded_bytes"] / d["total_bytes"] * 100
@@ -93,9 +85,14 @@ def download_single_video(
                 window,
             )
 
-    ydl_opts = ydl_opts(text_area)
-    ydl_opts["progress_hooks"] = [on_progress_hook]
-    ydl_opts["outtmpl"] = os.path.join(save_directory, "%(title)s.%(ext)s")
+    # Get the appropriate options based on download type
+    if download_type == "MP3":
+        ydl_opts = get_ydl_opts_single_mp3(save_directory, on_progress_hook)
+    elif download_type == "MP4":
+        ydl_opts = get_ydl_opts_single_mp4(save_directory, on_progress_hook)
+    else:
+        display_message("Invalid download type. Choose 'MP4' or 'MP3'.", "", text_area)
+        return
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -208,7 +205,11 @@ def start_download_playlist_threaded_inner(
     try:
         logging.info(f"Processing playlist: {playlist_link}")
 
-        ydl_opts = get_ydl_opts_playlist(download_type)
+        # Create a simple progress hook for playlist extraction
+        def on_progress_hook(d):
+            pass  # Playlist extraction doesn't need detailed progress
+
+        ydl_opts = get_ydl_opts_playlist(download_type, save_directory, on_progress_hook)
 
         with YoutubeDL(ydl_opts) as ydl:
             playlist_info = ydl.extract_info(playlist_link, download=False)
